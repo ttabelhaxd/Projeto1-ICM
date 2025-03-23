@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SnapQuest</string>
+    <string name="web_client_id">!!!! change to web client id here !!!!</string>
 </resources>
