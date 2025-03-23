@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.IntentSender
 import androidx.room.Room
 import com.example.snapquest.R
+import com.example.snapquest.SnapQuestApp
 import com.example.snapquest.models.AppDatabase
 import com.example.snapquest.repositories.UserRepository
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
@@ -20,13 +21,7 @@ class GoogleAuthUiClient(
     private val oneTapClient: SignInClient
 ) {
     private val auth = Firebase.auth
-    private val userRepo = UserRepository(
-        Room.databaseBuilder(
-            context,
-            AppDatabase::class.java, "snapquest-database"
-        ).build().userDao()
-    )
-
+    private val userRepo = SnapQuestApp.getUserRepository()
 
     suspend fun signIn(): IntentSender? {
         val result = try {
