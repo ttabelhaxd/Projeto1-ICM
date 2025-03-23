@@ -61,9 +61,33 @@ dependencies {
     //dependency for the navigation.
     implementation(libs.androidx.navigation.compose)
 
-    //dependency for room database
+    //dependencies for room database
     implementation(libs.androidx.room.runtime)
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
+
+    // dependencies for firebase
+    implementation(libs.coil.compose)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics.ktx)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.play.services.auth)
+
+    // dependency to access the camera
+    implementation(libs.androidx.camera.core)
+
+    // Location services
+    implementation(libs.play.services.location)
+    // Maps SDK for Android
+    implementation(libs.play.services.maps)
+    // Android Maps Compose composable for the Maps SDK for Android
+    implementation(libs.maps.compose)
+
+    // dependency for permissions
+    implementation(libs.accompanist.permissions)
+
+    // more icons instead of vector image importing
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.collection.ktx)
 
 
 }
