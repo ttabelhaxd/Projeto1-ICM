@@ -32,13 +32,19 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.example.snapquest.viewModels.SignInViewModel
+import com.example.snapquest.viewModels.SignInViewModelFactory
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val userRepository by lazy {
+        (application as SnapQuestApp).userRepository
+    }
+
     private val googleAuthUiClient by lazy {
         GoogleAuthUiClient(
             context = applicationContext,
-            oneTapClient = Identity.getSignInClient(applicationContext)
+            oneTapClient = Identity.getSignInClient(applicationContext),
+            userRepository = userRepository
         )
     }
 
@@ -63,7 +69,9 @@ class MainActivity : ComponentActivity() {
                         startDestination = Screens.SignIn.route
                     ) {
                         composable(Screens.SignIn.route) {
-                            val viewModel = viewModel<SignInViewModel>()
+                            val viewModel = viewModel<SignInViewModel>(
+                                factory = SignInViewModelFactory(userRepository)
+                            )
                             val state by viewModel.state.collectAsStateWithLifecycle()
 
                             LaunchedEffect(true) {
@@ -137,6 +145,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        composable(Screens.Home.route) {}
+                        composable(Screens.Quests.route) {}
+                        composable(Screens.DailyQuest.route) {}
+                        composable(Screens.Scan.route) {}
+                        composable(Screens.Notifications.route) {}
+                        composable(Screens.Settings.route) {}
                     }
                 }
             }

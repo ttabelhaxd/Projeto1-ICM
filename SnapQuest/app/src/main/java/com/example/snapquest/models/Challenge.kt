@@ -13,5 +13,7 @@ data class Challenge(
     var hintPhotoUrl: String = "",
     var latitude: Double = 0.0,
     var longitude: Double = 0.0,
-    var isCompleted: Boolean = false
+    var isCompleted: Boolean = false,
+    var orderInQuest: Int = 0,
+    var questId: Int = 0
 )

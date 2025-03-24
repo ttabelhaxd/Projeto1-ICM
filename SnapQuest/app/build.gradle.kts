@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -65,13 +66,12 @@ dependencies {
     //dependencies for room database
     implementation(libs.androidx.room.runtime)
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
+    implementation(libs.androidx.room.ktx)
 
     // dependencies for firebase
-    implementation(libs.coil.compose)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics.ktx)
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.play.services.auth)
+    implementation(libs.play.services.auth.v2111)
+    implementation(platform(libs.firebase.bom.v3281))
+    implementation(libs.google.firebase.auth.ktx)
 
     // dependency to access the camera
     implementation(libs.androidx.camera.core)

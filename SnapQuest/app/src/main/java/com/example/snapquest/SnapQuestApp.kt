@@ -1,33 +1,37 @@
 package com.example.snapquest
 
 import android.app.Application
-import android.content.Context
 import androidx.room.Room
+import com.example.snapquest.manages.LocationManager
 import com.example.snapquest.models.AppDatabase
 import com.example.snapquest.repositories.UserRepository
+import com.google.firebase.FirebaseApp
 
 class SnapQuestApp : Application() {
-    lateinit var database: AppDatabase
-    lateinit var userRepository: UserRepository
+    val database by lazy {
+        Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "snapquest-database"
+        )
+            .fallbackToDestructiveMigration() //only for development!!
+            .build()
+    }
+
+    val userRepository by lazy { UserRepository(database.userDao()) }
+
+    companion object {
+        @Volatile private var instance: SnapQuestApp? = null
+
+        fun getInstance(): SnapQuestApp {
+            return instance ?: throw IllegalStateException("Application not initialized")
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
-        database = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "snapquest-database"
-        ).build()
-        userRepository = UserRepository(database.userDao())
-    }
-
-    companion object {
-        private var instance: SnapQuestApp? = null
-
-        fun getContext(): Context {
-            return instance!!.applicationContext
-        }
-
-        fun getUserRepository(): UserRepository {
-            return instance!!.userRepository
-        }
+        FirebaseApp.initializeApp(this)
+        instance = this
+        LocationManager.initialize(this)
     }
 }

@@ -7,7 +7,18 @@ import kotlinx.coroutines.flow.Flow
 class UserRepository(private val userDao: UserDao) {
 
     companion object {
-        var currentUser = User()
+        @Volatile
+        private var instance: UserRepository? = null
+
+        @Volatile
+        var currentUser: User? = null
+            private set
+
+        fun getInstance(userDao: UserDao): UserRepository {
+            return instance ?: synchronized(this) {
+                instance ?: UserRepository(userDao).also { instance = it }
+            }
+        }
     }
 
     suspend fun registerUser(user: User) {
@@ -16,13 +27,14 @@ class UserRepository(private val userDao: UserDao) {
         val existingUser = userDao.getUserById(user.uid)
         if (existingUser != null) {
             currentUser = existingUser
-            userDao.updateUser(user)
+            userDao.updateUser(user.apply {
+                id = existingUser.id
+            })
         } else {
             userDao.insertUser(user)
-            currentUser = user
+            currentUser = userDao.getUserById(user.uid)
         }
     }
-
     suspend fun getUser(uid: String): User? {
         return userDao.getUserById(uid)
     }
@@ -41,5 +53,23 @@ class UserRepository(private val userDao: UserDao) {
 
     fun resetCurrentUser() {
         currentUser = User()
+    }
+
+    suspend fun incrementChallengesCompleted(uid: String) {
+        userDao.incrementChallengesCompleted(uid)
+        currentUser?.challengesCompleted = (currentUser?.challengesCompleted ?: 0) + 1
+    }
+
+    suspend fun incrementQuestsCompleted(uid: String) {
+        userDao.incrementQuestsCompleted(uid)
+        currentUser?.questsCompleted = (currentUser?.questsCompleted ?: 0) + 1
+    }
+
+    suspend fun getCompletedQuestsCount(uid: String): Int {
+        return userDao.getUserById(uid)?.questsCompleted ?: 0
+    }
+
+    suspend fun getCompletedChallengesCount(uid: String): Int {
+        return userDao.getUserById(uid)?.challengesCompleted ?: 0
     }
 }

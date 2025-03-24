@@ -3,10 +3,7 @@ package com.example.snapquest.signin
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
-import androidx.room.Room
 import com.example.snapquest.R
-import com.example.snapquest.SnapQuestApp
-import com.example.snapquest.models.AppDatabase
 import com.example.snapquest.repositories.UserRepository
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -18,10 +15,10 @@ import kotlinx.coroutines.tasks.await
 
 class GoogleAuthUiClient(
     private val context: Context,
-    private val oneTapClient: SignInClient
+    private val oneTapClient: SignInClient,
+    private val userRepository: UserRepository
 ) {
     private val auth = Firebase.auth
-    private val userRepo = SnapQuestApp.getUserRepository()
 
     suspend fun signIn(): IntentSender? {
         val result = try {
@@ -66,7 +63,7 @@ class GoogleAuthUiClient(
         try {
             oneTapClient.signOut().await()
             auth.signOut()
-            userRepo.resetCurrentUser()
+            userRepository.resetCurrentUser()
         } catch(e: Exception) {
             e.printStackTrace()
             if(e is CancellationException) throw e
@@ -93,4 +90,6 @@ class GoogleAuthUiClient(
             .setAutoSelectEnabled(true)
             .build()
     }
+
+
 }
