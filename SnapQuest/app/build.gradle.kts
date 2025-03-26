@@ -39,6 +39,9 @@ android {
     buildFeatures {
         compose = true
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.9"
+    }
 }
 
 dependencies {
@@ -69,9 +72,13 @@ dependencies {
     implementation(libs.androidx.room.ktx)
 
     // dependencies for firebase
-    implementation(libs.play.services.auth.v2111)
-    implementation(platform(libs.firebase.bom.v3281))
-    implementation(libs.google.firebase.auth.ktx)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.play.services.auth)
 
     // dependency to access the camera
     implementation(libs.androidx.camera.core)
