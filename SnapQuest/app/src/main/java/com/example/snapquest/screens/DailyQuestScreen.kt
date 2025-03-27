@@ -30,7 +30,7 @@ fun DailyQuestScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ){
-            TitleMessage(modifier = modifier, text1 = "Hello", text2 = "Daily Quest")
+            TitleMessage(modifier = modifier, text1 = "", text2 = "Daily Quest")
         }
     }
 }

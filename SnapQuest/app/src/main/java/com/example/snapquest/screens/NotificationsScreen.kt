@@ -30,7 +30,7 @@ fun NotificationsScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ){
-            TitleMessage(modifier = modifier, text1 = "Hello", text2 = "Notifications")
+            TitleMessage(modifier = modifier, text1 = "", text2 = "Notifications")
         }
     }
 }

@@ -54,7 +54,7 @@ fun Navbar(
             route = Screens.Quests.route
         ),
         NavItem(
-            label = "Daily Quest",
+            label = "Daily",
             selectedIcon = Icons.AutoMirrored.Filled.ReceiptLong,
             unselectedIcon = Icons.AutoMirrored.Outlined.ReceiptLong,
             hasNews = false,
@@ -62,7 +62,7 @@ fun Navbar(
         ),
 
         NavItem(
-            label = "Notifications",
+            label = "Alerts",
             selectedIcon = Icons.Filled.Notifications,
             unselectedIcon = Icons.Outlined.Notifications,
             hasNews = false,

@@ -13,10 +13,12 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,6 +33,7 @@ import com.example.snapquest.screens.QuestsScreen
 import com.example.snapquest.screens.SettingsScreen
 import com.example.snapquest.screens.SignInScreen
 import com.example.snapquest.signin.GoogleAuthUiClient
+import com.example.snapquest.signin.SignInState
 import com.example.snapquest.signin.UserData
 import com.example.snapquest.ui.theme.SnapQuestTheme
 import com.example.snapquest.viewModels.HomeViewModel
