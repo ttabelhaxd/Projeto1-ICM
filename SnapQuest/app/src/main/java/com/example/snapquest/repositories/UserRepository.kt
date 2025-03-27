@@ -35,6 +35,11 @@ class UserRepository(private val userDao: UserDao) {
             currentUser = userDao.getUserById(user.uid)
         }
     }
+
+    fun getCurrentUser(): User? {
+        return currentUser
+    }
+
     suspend fun getUser(uid: String): User? {
         return userDao.getUserById(uid)
     }
