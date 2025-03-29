@@ -3,6 +3,7 @@ package com.example.snapquest.repositories
 import com.example.snapquest.models.Challenge
 import com.example.snapquest.models.Quest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -13,11 +14,29 @@ class FirestoreQuestRepository {
     private val questsRef = db.collection("quests")
 
     suspend fun createQuest(quest: Quest, challenges: List<Challenge>) {
-        val questRef = questsRef.document()
-        questRef.set(quest.copy(id = questRef.id.toInt())).await()
+        return try {
+            val questRef = questsRef.document()
+            val newQuest = quest.copy(
+                id = questRef.id,
+                name = quest.name,
+                description = quest.description,
+                photoUrl = quest.photoUrl,
+                latitude = quest.latitude,
+                startDate = quest.startDate,
+                endDate = quest.endDate,
+                isActive = quest.isActive,
+                creatorId = quest.creatorId
+            )
+            questRef.set(newQuest).await()
 
-        challenges.forEach { challenge ->
-            questRef.collection("challenges").document().set(challenge).await()
+            challenges.forEach { challenge ->
+                questRef.collection("challenges")
+                    .document()
+                    .set(challenge.copy(questId = questRef.id))
+                    .await()
+            }
+        } catch (e: Exception) {
+            throw e
         }
     }
 
@@ -32,10 +51,19 @@ class FirestoreQuestRepository {
         ).await()
     }
 
-    fun getActiveQuests(): Flow<List<Quest>> = flow {
-        val snapshot = questsRef.whereEqualTo("isActive", true).get().await()
-        val quests = snapshot.documents.map { it.toObject<Quest>()!! }
-        emit(quests)
+    fun getActiveQuests(): Flow<Result<List<Quest>>> = flow {
+        try {
+            val snapshot = questsRef
+                .whereEqualTo("isActive", true)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .await()
+
+            val quests = snapshot.documents.mapNotNull { it.toObject<Quest>() }
+            emit(Result.success(quests))
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
     }
 
     suspend fun getQuestChallenges(questId: String): List<Challenge> {

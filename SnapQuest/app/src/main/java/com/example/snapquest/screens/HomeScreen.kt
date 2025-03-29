@@ -32,7 +32,7 @@ fun HomeScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ){
-            TitleMessage(modifier = modifier, text1 = "Hello", text2 = viewModel.getName())
+            TitleMessage(modifier = modifier, text1 = "Hello, ", text2 = viewModel.getName())
         }
     }
 }

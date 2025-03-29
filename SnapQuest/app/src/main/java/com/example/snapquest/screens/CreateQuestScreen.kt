@@ -16,14 +16,15 @@ import androidx.compose.ui.unit.dp
 import com.example.snapquest.models.Challenge
 import com.example.snapquest.models.Quest
 import com.example.snapquest.viewModels.QuestViewModel
+import java.util.Date
 
 @Composable
 fun CreateQuestScreen(viewModel: QuestViewModel) {
     var questName by remember { mutableStateOf("") }
     var questDescription by remember { mutableStateOf("") }
     var questImageUrl by remember { mutableStateOf("") }
-    var questStartDate by remember { mutableStateOf("") }
-    var questEndDate by remember { mutableStateOf("") }
+    var questStartDate by remember { mutableStateOf(Date()) }
+    var questEndDate by remember { mutableStateOf(Date()) }
     var questLatitude by remember { mutableStateOf("") }
     var questLongitude by remember { mutableStateOf("") }
     var questChallenges by remember { mutableStateOf(listOf<Challenge>()) }
@@ -68,11 +69,11 @@ fun CreateQuestScreen(viewModel: QuestViewModel) {
         )
 
         BasicTextField(
-            value = questStartDate,
-            onValueChange = { questStartDate = it },
+            value = questStartDate.toString(),
+            onValueChange = { questStartDate = Date(it) },
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             decorationBox = { innerTextField ->
-                if (questStartDate.isEmpty()) {
+                if (questStartDate.toString().isEmpty()) {
                     Text("Data de Início da Quest")
                 }
                 innerTextField()
@@ -80,11 +81,11 @@ fun CreateQuestScreen(viewModel: QuestViewModel) {
         )
 
         BasicTextField(
-            value = questEndDate,
-            onValueChange = { questEndDate = it },
+            value = questEndDate.toString(),
+            onValueChange = { questEndDate = Date(it) },
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             decorationBox = { innerTextField ->
-                if (questEndDate.isEmpty()) {
+                if (questEndDate.toString().isEmpty()) {
                     Text("Data de Término da Quest")
                 }
                 innerTextField()
@@ -219,8 +220,8 @@ fun CreateQuestScreen(viewModel: QuestViewModel) {
                     name = questName,
                     description = questDescription,
                     photoUrl = questImageUrl,
-                    startDate = questStartDate.toLong(),
-                    endDate = questEndDate.toLong(),
+                    startDate = questStartDate,
+                    endDate = questEndDate,
                     latitude = questLatitude.toDouble(),
                     longitude = questLongitude.toDouble()
                 ),

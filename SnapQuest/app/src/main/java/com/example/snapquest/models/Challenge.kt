@@ -1,12 +1,7 @@
 package com.example.snapquest.models
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
-@Entity(tableName = "challenges")
 data class Challenge(
-    @PrimaryKey(autoGenerate = true)
-    var id: Int = 0,
+    var id: String = "",
     var name: String = "",
     var description: String = "",
     var hint: String = "",
@@ -15,5 +10,5 @@ data class Challenge(
     var longitude: Double = 0.0,
     var isCompleted: Boolean = false,
     var orderInQuest: Int = 0,
-    var questId: Int = 0
+    var questId: String = ""
 )

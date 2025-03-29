@@ -4,35 +4,36 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.snapquest.models.User
-import com.example.snapquest.repositories.UserRepository
+import com.example.snapquest.repositories.FirestoreUserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val userRepository: UserRepository
+    private val firestoreUserRepository: FirestoreUserRepository
 ) : ViewModel() {
-    private val _user = MutableStateFlow<User?>(null)
-    val user: StateFlow<User?> = _user
+    private val _userName = MutableStateFlow("")
+    private val userName: StateFlow<String> = _userName
 
     init {
         viewModelScope.launch {
-            val fetchedUser = userRepository.currentUser
-            _user.emit(fetchedUser)
+            firestoreUserRepository.currentUser.collect { user ->
+                _userName.value = user?.name ?: "Visitor"
+            }
         }
     }
 
     fun getName(): String {
-        return user.value?.name?.split(" ")?.get(0).toString()
+        return userName.value.split(" ")[0]
     }
 }
 
 class HomeViewModelFactory(
-    private val userRepository: UserRepository
+    private val firestoreUserRepository: FirestoreUserRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
-            return HomeViewModel(userRepository) as T
+            return HomeViewModel(firestoreUserRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

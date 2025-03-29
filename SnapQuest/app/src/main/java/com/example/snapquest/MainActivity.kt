@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
         GoogleAuthUiClient(
             context = applicationContext,
             oneTapClient = Identity.getSignInClient(applicationContext),
-            userRepository = userRepository
+            firestoreUserRepository = userRepository
         )
     }
 
@@ -89,18 +89,6 @@ class MainActivity : ComponentActivity() {
                                 factory = SignInViewModelFactory(userRepository)
                             )
                             val state by viewModel.state.collectAsStateWithLifecycle()
-
-                            LaunchedEffect(true) {
-                                viewModel.loginUser(
-                                    UserData(
-                                    userId = "",
-                                    username = "",
-                                    profilePictureURL = ""
-                                )
-                                )
-                                viewModel.resetState()
-
-                            }
 
                             LaunchedEffect(key1 = Unit) {
                                 viewModel.resetState()
@@ -145,12 +133,10 @@ class MainActivity : ComponentActivity() {
                                     viewModel.resetState()
                                 }
                             }
-                            val homeViewModel = viewModel<HomeViewModel>(
-                                factory = HomeViewModelFactory(userRepository)
-                            )
+
                             SignInScreen(
                                 state = state,
-                                viewModel = homeViewModel,
+                                viewModel = viewModel,
                                 onSignInClick = {
                                     lifecycleScope.launch {
                                         val signInIntentSender = googleAuthUiClient.signIn()

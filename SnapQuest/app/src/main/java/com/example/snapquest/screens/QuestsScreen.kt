@@ -24,7 +24,7 @@ fun QuestsScreen(
     viewModel: QuestViewModel
 ) {
     val quests by viewModel.quests.collectAsState()
-    val user by viewModel.user.collectAsState()
+    val user by viewModel.currentUser.collectAsState()
 
     Scaffold(
         bottomBar = { Navbar(modifier = Modifier, navController = navController) }
@@ -42,7 +42,7 @@ fun QuestsScreen(
                     QuestCard(
                         quest = quest,
                         onJoinClick = {
-                            viewModel.joinQuest(user, quest.id.toString())
+                            viewModel.joinQuest(user?.uid, quest.id)
                         }
                     )
                 }

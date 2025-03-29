@@ -19,16 +19,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.snapquest.signin.SignInState
-import com.example.snapquest.viewModels.HomeViewModel
 import androidx.compose.ui.res.painterResource
 import com.example.snapquest.R
+import com.example.snapquest.viewModels.SignInViewModel
 
 @Composable
 fun SignInScreen(
     modifier: Modifier = Modifier,
     state: SignInState,
     onSignInClick: () -> Unit,
-    viewModel: HomeViewModel
+    viewModel: SignInViewModel
 ) {
     val context = LocalContext.current
 
@@ -57,10 +57,10 @@ fun SignInScreen(
             )
             Button(
                 onClick = onSignInClick,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(4.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier.padding(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(

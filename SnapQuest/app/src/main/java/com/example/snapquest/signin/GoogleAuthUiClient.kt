@@ -5,7 +5,7 @@ import android.content.Intent
 import android.content.IntentSender
 import android.util.Log
 import com.example.snapquest.R
-import com.example.snapquest.repositories.UserRepository
+import com.example.snapquest.repositories.FirestoreUserRepository
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.GoogleAuthProvider
@@ -17,7 +17,7 @@ import kotlinx.coroutines.tasks.await
 class GoogleAuthUiClient(
     private val context: Context,
     private val oneTapClient: SignInClient,
-    private val userRepository: UserRepository
+    private val firestoreUserRepository: FirestoreUserRepository
 ) {
     private val auth = Firebase.auth
 
@@ -38,15 +38,21 @@ class GoogleAuthUiClient(
             val googleIdToken = credential.googleIdToken
             val googleCredentials = GoogleAuthProvider.getCredential(googleIdToken, null)
             val user = auth.signInWithCredential(googleCredentials).await().user
-            SignInResult(
-                data = user?.run {
-                    UserData(
-                        userId = uid,
-                        username = displayName,
-                        profilePictureURL = photoUrl?.toString()
-                    )
-                },
-                errorMessage = null
+            user?.let { firebaseUser ->
+                val userData = UserData(
+                    userId = firebaseUser.uid,
+                    username = firebaseUser.displayName ?: "",
+                    profilePictureURL = firebaseUser.photoUrl?.toString(),
+                    email = firebaseUser.email
+                )
+
+                SignInResult(
+                    data = userData,
+                    errorMessage = null
+                )
+            } ?: SignInResult(
+                data = null,
+                errorMessage = "Usuário não encontrado"
             )
         } catch (e: Exception) {
             Log.e("GoogleAuthUiClient", "Sign-in with intent failed", e)
@@ -62,7 +68,7 @@ class GoogleAuthUiClient(
         try {
             oneTapClient.signOut().await()
             auth.signOut()
-            userRepository.resetCurrentUser()
+            firestoreUserRepository.resetCurrentUser()
         } catch (e: Exception) {
             Log.e("GoogleAuthUiClient", "Sign-out failed", e)
             if (e is CancellationException) throw e
@@ -73,7 +79,8 @@ class GoogleAuthUiClient(
         UserData(
             userId = uid,
             username = displayName,
-            profilePictureURL = photoUrl?.toString()
+            profilePictureURL = photoUrl?.toString(),
+            email = email
         )
     }
 

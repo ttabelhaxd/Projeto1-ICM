@@ -1,19 +1,16 @@
 package com.example.snapquest.models
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import java.util.Date
 
-@Entity(tableName = "quests")
 data class Quest(
-    @PrimaryKey(autoGenerate = true)
-    var id: Int = 0,
+    var id: String = "",
     var name: String = "",
     var description: String = "",
     var photoUrl: String = "",
-    var startDate: Long = 0,
-    var endDate: Long = 0,
+    var startDate: Date = Date(),
+    var endDate: Date = Date(),
     var isActive: Boolean = false,
     var latitude: Double = 0.0,
     var longitude: Double = 0.0,
-    var creatorId: Int = 0
+    var creatorId: String = ""
 )
