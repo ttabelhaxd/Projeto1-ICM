@@ -25,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.snapquest.navigation.Screens
 import com.example.snapquest.screens.DailyQuestScreen
+import com.example.snapquest.screens.EditProfileScreen
 import com.example.snapquest.screens.HomeScreen
 import com.example.snapquest.screens.NotificationsScreen
 import com.example.snapquest.screens.QuestsScreen
@@ -201,6 +202,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screens.Settings.route) {
                             val localContext = LocalContext.current
+                            val homeViewModel = viewModel<HomeViewModel>(
+                                factory = HomeViewModelFactory(userRepository)
+                            )
 
                             SettingsScreen(
                                 modifier = Modifier,
@@ -208,7 +212,6 @@ class MainActivity : ComponentActivity() {
                                 onSignOut = {
                                     lifecycleScope.launch {
                                         googleAuthUiClient.signOut()
-
                                         Toast.makeText(
                                             localContext,
                                             "Signed out",
@@ -216,7 +219,28 @@ class MainActivity : ComponentActivity() {
                                         ).show()
                                         navController.navigate(Screens.SignIn.route)
                                     }
-                                }
+                                },
+                                onEditProfile = {
+                                    navController.navigate(Screens.EditProfile.route)
+                                },
+                                viewModel = homeViewModel,
+                            )
+                        }
+                        composable(Screens.EditProfile.route) {
+                            val homeViewModel = viewModel<HomeViewModel>(
+                                factory = HomeViewModelFactory(userRepository)
+                            )
+                            EditProfileScreen(
+                                viewModel = homeViewModel,
+                                navController = navController,
+                                onSaveProfile = { name, email ->
+                                    lifecycleScope.launch {
+                                        homeViewModel.currentUser.value?.let { user ->
+                                            val updatedUser = user.copy(name = name, email = email)
+                                            homeViewModel.updateUserProfile(updatedUser)
+                                        }
+                                    }
+                                },
                             )
                         }
                     }

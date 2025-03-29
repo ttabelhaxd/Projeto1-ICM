@@ -7,24 +7,31 @@ import com.example.snapquest.models.User
 import com.example.snapquest.repositories.FirestoreUserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val firestoreUserRepository: FirestoreUserRepository
 ) : ViewModel() {
-    private val _userName = MutableStateFlow("")
-    private val userName: StateFlow<String> = _userName
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     init {
         viewModelScope.launch {
             firestoreUserRepository.currentUser.collect { user ->
-                _userName.value = user?.name ?: "Visitor"
+                _currentUser.value = user
             }
         }
     }
 
     fun getName(): String {
-        return userName.value.split(" ")[0]
+        return (currentUser.value?.name?.split (" ")?.get(0)) ?: "Visitor"
+    }
+
+    fun updateUserProfile(updatedUser: User) {
+        viewModelScope.launch {
+            firestoreUserRepository.updateUser(updatedUser)
+        }
     }
 }
 

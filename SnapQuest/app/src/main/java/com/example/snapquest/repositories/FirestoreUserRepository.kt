@@ -21,24 +21,23 @@ class FirestoreUserRepository @Inject constructor() {
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser = _currentUser.asStateFlow()
 
-    suspend fun fetchCurrentUser(uid: String): Result<User?> {
+    suspend fun fetchCurrentUser(uid: String): User? {
         return try {
-            if (uid.isBlank()) {
-                throw IllegalArgumentException("User ID cannot be blank")
-            }
+            if (uid.isBlank()) return null
 
             val snapshot = usersRef.document(uid).get().await()
-
             if (snapshot.exists()) {
-                val user = snapshot.toObject(User::class.java)?.copy(uid = uid)
-                _currentUser.value = user
-                Result.success(user)
+                snapshot.toObject(User::class.java)?.copy(
+                    uid = uid,
+                    questsCompleted = snapshot.getLong("questsCompleted")?.toInt() ?: 0,
+                    challengesCompleted = snapshot.getLong("challengesCompleted")?.toInt() ?: 0
+                )
             } else {
-                Result.success(null)
+                null
             }
         } catch (e: Exception) {
             Log.e("FirestoreUserRepo", "Error fetching user", e)
-            Result.failure(e)
+            null
         }
     }
 

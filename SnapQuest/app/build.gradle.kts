@@ -67,10 +67,9 @@ dependencies {
     //dependency for the navigation.
     implementation(libs.androidx.navigation.compose)
 
-    //dependencies for room database
-    implementation(libs.androidx.room.runtime)
-    ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
-    implementation(libs.androidx.room.ktx)
+    // dependency for the image loading
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     // dependencies for firebase
     implementation(platform(libs.firebase.bom))

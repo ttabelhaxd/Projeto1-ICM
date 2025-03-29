@@ -20,10 +20,30 @@ class SignInViewModel(
     val state = _state.asStateFlow()
 
     fun onSignInResult(result: SignInResult) {
-        result.data?.let {
+        result.data?.let { userData ->
             viewModelScope.launch {
                 try {
-                    _state.update { it.copy(isSignInSuccessful = true) }
+                    val userId = userData.userId ?: throw Exception("User ID is null")
+                    val existingUser = firestoreUserRepository.fetchCurrentUser(userId)
+
+                    if (existingUser == null) {
+                        val newUser = User(
+                            uid = userId,
+                            name = userData.username ?: "",
+                            email = userData.email ?: "",
+                            photoUrl = userData.profilePictureURL ?: "",
+                            isAdmin = true,
+                            questsCompleted = 0,
+                            challengesCompleted = 0
+                        )
+                        firestoreUserRepository.registerUser(newUser).onSuccess {
+                            _state.update { it.copy(isSignInSuccessful = true) }
+                        }.onFailure { e ->
+                            _state.update { it.copy(signInError = "Erro ao registrar: ${e.message}") }
+                        }
+                    } else {
+                        _state.update { it.copy(isSignInSuccessful = true) }
+                    }
                 } catch (e: Exception) {
                     _state.update { it.copy(signInError = "Erro: ${e.message}") }
                 }
@@ -42,13 +62,16 @@ class SignInViewModel(
                 return@launch
             }
 
+            val existingUser = firestoreUserRepository.fetchCurrentUser(userData.userId)
             try {
                 val user = User(
-                    uid = userData.userId ?: "",
-                    name = userData.username ?: "",
-                    email = userData.email ?: "",
-                    photoUrl = userData.profilePictureURL ?: "",
-                    isAdmin = false
+                    uid = existingUser?.uid ?: userData.userId,
+                    name = existingUser?.name ?: userData.username ?: "",
+                    email = existingUser?.email ?: userData.email ?: "",
+                    photoUrl = existingUser?.photoUrl ?: userData.profilePictureURL ?: "",
+                    isAdmin = existingUser?.isAdmin?.equals(false) ?: true,
+                    questsCompleted = existingUser?.questsCompleted ?: 0,
+                    challengesCompleted = existingUser?.challengesCompleted ?: 0
                 )
                 firestoreUserRepository.registerUser(user)
                 _state.update { it.copy(isSignInSuccessful = true) }
