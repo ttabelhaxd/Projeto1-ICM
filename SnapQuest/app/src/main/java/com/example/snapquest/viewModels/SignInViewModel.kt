@@ -26,6 +26,18 @@ class SignInViewModel(
                 signInError = result.errorMessage
             )
         }
+
+        result.data?.let { userData ->
+            viewModelScope.launch {
+                userRepository.registerUser(
+                    User(
+                        uid = userData.userId ?: "",
+                        name = userData.username ?: "",
+                        photoUrl = userData.profilePictureURL ?: ""
+                    )
+                )
+            }
+        }
     }
 
     fun resetState() {

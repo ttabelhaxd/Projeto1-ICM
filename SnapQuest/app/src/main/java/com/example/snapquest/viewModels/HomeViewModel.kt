@@ -17,7 +17,7 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            val fetchedUser = userRepository.getCurrentUser()
+            val fetchedUser = userRepository.currentUser
             _user.emit(fetchedUser)
         }
     }

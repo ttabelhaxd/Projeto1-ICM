@@ -1,80 +1,55 @@
 package com.example.snapquest.repositories
 
 import com.example.snapquest.models.User
-import com.example.snapquest.models.UserDao
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
-class UserRepository(private val userDao: UserDao) {
+class UserRepository {
+    private val db = FirebaseFirestore.getInstance()
+    private val usersRef = db.collection("users")
+    private var _currentUser: User? = null
 
-    companion object {
-        @Volatile
-        private var instance: UserRepository? = null
+    val currentUser: User?
+        get() = _currentUser
 
-        @Volatile
-        var currentUser: User? = null
-            private set
+    suspend fun fetchCurrentUser(uid: String) {
+        _currentUser = usersRef.document(uid).get().await().toObject(User::class.java)
+    }
 
-        fun getInstance(userDao: UserDao): UserRepository {
-            return instance ?: synchronized(this) {
-                instance ?: UserRepository(userDao).also { instance = it }
-            }
-        }
+    fun resetCurrentUser() {
+        _currentUser = null
     }
 
     suspend fun registerUser(user: User) {
         if (user.uid.isBlank()) return
-
-        val existingUser = userDao.getUserById(user.uid)
-        if (existingUser != null) {
-            currentUser = existingUser
-            userDao.updateUser(user.apply {
-                id = existingUser.id
-            })
-        } else {
-            userDao.insertUser(user)
-            currentUser = userDao.getUserById(user.uid)
-        }
-    }
-
-    fun getCurrentUser(): User? {
-        return currentUser
+        usersRef.document(user.uid).set(user).await()
     }
 
     suspend fun getUser(uid: String): User? {
-        return userDao.getUserById(uid)
+        return usersRef.document(uid).get().await().toObject(User::class.java)
     }
 
     suspend fun updateUser(user: User) {
-        userDao.updateUser(user)
+        usersRef.document(user.uid).set(user).await()
     }
 
-    suspend fun deleteUser(user: User) {
-        userDao.deleteUser(user)
+    suspend fun deleteUser(uid: String) {
+        usersRef.document(uid).delete().await()
     }
 
-    fun getAllUsers(): Flow<List<User>> {
-        return userDao.getAllUsers()
-    }
-
-    fun resetCurrentUser() {
-        currentUser = User()
+    fun getAllUsers(): Flow<List<User>> = flow {
+        val snapshot = usersRef.get().await()
+        emit(snapshot.toObjects(User::class.java))
     }
 
     suspend fun incrementChallengesCompleted(uid: String) {
-        userDao.incrementChallengesCompleted(uid)
-        currentUser?.challengesCompleted = (currentUser?.challengesCompleted ?: 0) + 1
+        usersRef.document(uid).update("challengesCompleted", FieldValue.increment(1)).await()
     }
 
     suspend fun incrementQuestsCompleted(uid: String) {
-        userDao.incrementQuestsCompleted(uid)
-        currentUser?.questsCompleted = (currentUser?.questsCompleted ?: 0) + 1
-    }
-
-    suspend fun getCompletedQuestsCount(uid: String): Int {
-        return userDao.getUserById(uid)?.questsCompleted ?: 0
-    }
-
-    suspend fun getCompletedChallengesCount(uid: String): Int {
-        return userDao.getUserById(uid)?.challengesCompleted ?: 0
+        usersRef.document(uid).update("questsCompleted", FieldValue.increment(1)).await()
     }
 }

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.example.snapquest.manages.LocationManager
 import com.example.snapquest.models.AppDatabase
+import com.example.snapquest.repositories.FirestoreQuestRepository
 import com.example.snapquest.repositories.UserRepository
 import com.google.firebase.FirebaseApp
 
@@ -18,7 +19,9 @@ class SnapQuestApp : Application() {
             .build()
     }
 
-    val userRepository by lazy { UserRepository(database.userDao()) }
+    //val userRepository by lazy { UserRepository(database.userDao()) }
+    val userRepository by lazy { UserRepository() }
+    val questRepository by lazy { FirestoreQuestRepository() }
 
     companion object {
         @Volatile private var instance: SnapQuestApp? = null

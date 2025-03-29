@@ -13,12 +13,10 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,11 +31,12 @@ import com.example.snapquest.screens.QuestsScreen
 import com.example.snapquest.screens.SettingsScreen
 import com.example.snapquest.screens.SignInScreen
 import com.example.snapquest.signin.GoogleAuthUiClient
-import com.example.snapquest.signin.SignInState
 import com.example.snapquest.signin.UserData
 import com.example.snapquest.ui.theme.SnapQuestTheme
 import com.example.snapquest.viewModels.HomeViewModel
 import com.example.snapquest.viewModels.HomeViewModelFactory
+import com.example.snapquest.viewModels.QuestViewModel
+import com.example.snapquest.viewModels.QuestViewModelFactory
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -51,6 +50,10 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val userRepository by lazy {
         (application as SnapQuestApp).userRepository
+    }
+
+    private val questRepository by lazy {
+        (application as SnapQuestApp).questRepository
     }
 
     private val googleAuthUiClient by lazy {
@@ -185,9 +188,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Screens.Quests.route) {
+                            val questViewModel = viewModel<QuestViewModel>(
+                                factory = QuestViewModelFactory(userRepository, questRepository)
+                            )
+
                             QuestsScreen(
                                 modifier = Modifier,
                                 navController = navController,
+                                viewModel = questViewModel
                             )
                         }
                         composable(Screens.DailyQuest.route) {
