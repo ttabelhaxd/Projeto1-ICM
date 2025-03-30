@@ -157,6 +157,9 @@ class MainActivity : ComponentActivity() {
                             val homeViewModel = viewModel<HomeViewModel>(
                                 factory = HomeViewModelFactory(userRepository)
                             )
+                            val questViewModel = viewModel<QuestViewModel>(
+                                factory = QuestViewModelFactory(userRepository, questRepository)
+                            )
                             val locationPermissions = rememberMultiplePermissionsState(
                                 permissions = listOf(
                                     android.Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -174,7 +177,8 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 modifier = Modifier,
                                 navController = navController,
-                                viewModel = homeViewModel
+                                viewModel = homeViewModel,
+                                questViewModel = questViewModel
                             )
                         }
                         composable(Screens.Quests.route) {
