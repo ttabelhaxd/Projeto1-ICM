@@ -54,12 +54,20 @@ fun QuestDetailsScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Detalhes da Quest
             quest?.let {
+                val isQuestComplete = userQuest?.isQuestCompleted ?: false
+
+                if (isQuestComplete) {
+                    Text(
+                        text = "Quest Completed!",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
                 QuestDetailsSection(quest = it)
             }
 
-            // Lista de Desafios
             Text(
                 text = "Challenges",
                 style = MaterialTheme.typography.titleLarge,

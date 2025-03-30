@@ -101,7 +101,13 @@ class FirestoreUserRepository @Inject constructor() {
         }
     }
 
-
+    suspend fun refreshUserData(uid: String) {
+        try {
+            _currentUser.value = fetchCurrentUser(uid)
+        } catch (e: Exception) {
+            Log.e("FirestoreUserRepo", "Error refreshing user data", e)
+        }
+    }
 
     fun resetCurrentUser() {
         _currentUser.value = null

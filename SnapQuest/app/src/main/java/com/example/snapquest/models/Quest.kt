@@ -14,5 +14,6 @@ data class Quest(
     var longitude: Double = 0.0,
     var creatorId: String = "",
     val participants: List<String> = emptyList(),
-    val createdAt: Date = Date()
+    val createdAt: Date = Date(),
+    val totalChallenges: Int = 0
 )

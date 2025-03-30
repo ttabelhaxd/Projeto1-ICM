@@ -149,6 +149,11 @@ class QuestViewModel(
             _uiState.value = QuestUiState.Loading
             try {
                 questRepository.completeChallenge(userId, questId, challengeId)
+                currentUser.value?.uid?.let { uid ->
+                    firestoreUserRepository.fetchCurrentUser(uid)?.let { user ->
+                        _currentUser.value = user
+                    }
+                }
                 _uiState.value = QuestUiState.ChallengeCompleted
             } catch (e: Exception) {
                 _uiState.value = QuestUiState.Error(e.message ?: "Failed to complete challenge")

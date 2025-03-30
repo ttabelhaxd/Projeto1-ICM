@@ -31,6 +31,7 @@ class HomeViewModel(
     fun updateUserProfile(updatedUser: User) {
         viewModelScope.launch {
             firestoreUserRepository.updateUser(updatedUser)
+            firestoreUserRepository.refreshUserData(updatedUser.uid)
         }
     }
 }

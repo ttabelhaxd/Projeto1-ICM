@@ -27,7 +27,8 @@ class FirestoreQuestRepository {
                 startDate = quest.startDate,
                 endDate = quest.endDate,
                 isActive = quest.isActive,
-                creatorId = quest.creatorId
+                creatorId = quest.creatorId,
+                totalChallenges = challenges.size,
             )
             questRef.set(newQuest).await()
 
@@ -158,6 +159,7 @@ class FirestoreQuestRepository {
     fun completeChallenge(userId: String, questId: String, challengeId: String): Result<Unit> {
         return try {
             val userQuestRef = db.collection("userQuests").document("${userId}_$questId")
+            val userRef = db.collection("users").document(userId)
 
             db.runTransaction { transaction ->
                 val userQuestSnapshot = transaction.get(userQuestRef)
@@ -170,14 +172,24 @@ class FirestoreQuestRepository {
                 }
 
                 val updatedCompleted = userQuest.completedChallenges + challengeId
-                val challengesSnapshot = transaction.get(questsRef.document(questId).collection("challenges").document())
-                val totalChallenges = challengesSnapshot.data?.size ?: 0
+
+                val totalChallenges = transaction.get(questsRef.document(questId)).getLong("totalChallenges")?.toInt() ?: 0
                 val isQuestCompleted = updatedCompleted.size == totalChallenges
 
                 transaction.update(userQuestRef,
                     "completedChallenges", updatedCompleted,
                     "isQuestCompleted", isQuestCompleted
                 )
+                if (isQuestCompleted) {
+                    transaction.update(userRef,
+                        "questsCompleted", FieldValue.increment(1),
+                        "challengesCompleted", FieldValue.increment(totalChallenges.toLong())
+                    )
+                } else {
+                    transaction.update(userRef,
+                        "challengesCompleted", FieldValue.increment(1)
+                    )
+                }
             }
 
             Result.success(Unit)
