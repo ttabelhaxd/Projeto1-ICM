@@ -1,25 +1,56 @@
 package com.example.snapquest.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation.Companion.keyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.snapquest.models.Challenge
 import com.example.snapquest.models.Quest
+import com.example.snapquest.ui.components.CustomDatePicker
+import com.example.snapquest.viewModels.QuestUiState
 import com.example.snapquest.viewModels.QuestViewModel
 import java.util.Date
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateQuestScreen(viewModel: QuestViewModel) {
+fun CreateQuestScreen(
+    modifier: Modifier = Modifier,
+    navController: NavHostController,
+    viewModel: QuestViewModel
+) {
     var questName by remember { mutableStateOf("") }
     var questDescription by remember { mutableStateOf("") }
     var questImageUrl by remember { mutableStateOf("") }
@@ -29,206 +60,292 @@ fun CreateQuestScreen(viewModel: QuestViewModel) {
     var questLongitude by remember { mutableStateOf("") }
     var questChallenges by remember { mutableStateOf(listOf<Challenge>()) }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Criar Nova Quest")
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-        BasicTextField(
-            value = questName,
-            onValueChange = { questName = it },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            decorationBox = { innerTextField ->
-                if (questName.isEmpty()) {
-                    Text("Nome da Quest")
-                }
-                innerTextField()
+    // Fecha a tela automaticamente após criar a quest
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is QuestUiState.QuestCreated -> {
+                Toast.makeText(context, "Quest created successfully", Toast.LENGTH_SHORT).show()
+                navController.popBackStack()
             }
-        )
-
-        BasicTextField(
-            value = questDescription,
-            onValueChange = { questDescription = it },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            decorationBox = { innerTextField ->
-                if (questDescription.isEmpty()) {
-                    Text("Descrição da Quest")
-                }
-                innerTextField()
+            is QuestUiState.Error -> {
+                Toast.makeText(context, (uiState as QuestUiState.Error).message, Toast.LENGTH_SHORT).show()
             }
-        )
-
-        BasicTextField(
-            value = questImageUrl,
-            onValueChange = { questImageUrl = it },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            decorationBox = { innerTextField ->
-                if (questImageUrl.isEmpty()) {
-                    Text("URL da Imagem da Quest")
-                }
-                innerTextField()
-            }
-        )
-
-        BasicTextField(
-            value = questStartDate.toString(),
-            onValueChange = { questStartDate = Date(it) },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            decorationBox = { innerTextField ->
-                if (questStartDate.toString().isEmpty()) {
-                    Text("Data de Início da Quest")
-                }
-                innerTextField()
-            }
-        )
-
-        BasicTextField(
-            value = questEndDate.toString(),
-            onValueChange = { questEndDate = Date(it) },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            decorationBox = { innerTextField ->
-                if (questEndDate.toString().isEmpty()) {
-                    Text("Data de Término da Quest")
-                }
-                innerTextField()
-            }
-        )
-
-        BasicTextField(
-            value = questLatitude,
-            onValueChange = { questLatitude = it },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            decorationBox = { innerTextField ->
-                if (questLatitude.isEmpty()) {
-                    Text("Latitude da Quest")
-                }
-                innerTextField()
-            }
-        )
-
-        BasicTextField(
-            value = questLongitude,
-            onValueChange = { questLongitude = it },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            decorationBox = { innerTextField ->
-                if (questLongitude.isEmpty()) {
-                    Text("Longitude da Quest")
-                }
-                innerTextField()
-            }
-        )
-
-        questChallenges.forEachIndexed { index, challenge ->
-            Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                Text("Desafio ${index + 1}")
-
-                BasicTextField(
-                    value = challenge.name,
-                    onValueChange = { newName ->
-                        questChallenges = questChallenges.toMutableList().apply {
-                            this[index] = this[index].copy(name = newName)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    decorationBox = { innerTextField ->
-                        if (challenge.name.isEmpty()) {
-                            Text("Nome do Desafio")
-                        }
-                        innerTextField()
-                    }
-                )
-
-                BasicTextField(
-                    value = challenge.description,
-                    onValueChange = { newDescription ->
-                        questChallenges = questChallenges.toMutableList().apply {
-                            this[index] = this[index].copy(description = newDescription)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    decorationBox = { innerTextField ->
-                        if (challenge.description.isEmpty()) {
-                            Text("Descrição do Desafio")
-                        }
-                        innerTextField()
-                    }
-                )
-
-                BasicTextField(
-                    value = challenge.hintPhotoUrl,
-                    onValueChange = { newHintPhotoUrl ->
-                        questChallenges = questChallenges.toMutableList().apply {
-                            this[index] = this[index].copy(hintPhotoUrl = newHintPhotoUrl)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    decorationBox = { innerTextField ->
-                        if (challenge.hintPhotoUrl.isEmpty()) {
-                            Text("URL da Foto do Desafio")
-                        }
-                        innerTextField()
-                    }
-                )
-
-                BasicTextField(
-                    value = challenge.latitude.toString(),
-                    onValueChange = { newLatitude ->
-                        questChallenges = questChallenges.toMutableList().apply {
-                            this[index] = this[index].copy(latitude = newLatitude.toDoubleOrNull() ?: 0.0)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    decorationBox = { innerTextField ->
-                        if (challenge.latitude == 0.0) {
-                            Text("Latitude do Desafio")
-                        }
-                        innerTextField()
-                    }
-                )
-
-                BasicTextField(
-                    value = challenge.longitude.toString(),
-                    onValueChange = { newLongitude ->
-                        questChallenges = questChallenges.toMutableList().apply {
-                            this[index] = this[index].copy(longitude = newLongitude.toDoubleOrNull() ?: 0.0)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    decorationBox = { innerTextField ->
-                        if (challenge.longitude == 0.0) {
-                            Text("Longitude do Desafio")
-                        }
-                        innerTextField()
-                    }
-                )
-            }
-        }
-
-        Button(onClick = {
-            questChallenges = questChallenges + Challenge(
-                name = "",
-                description = "",
-                hintPhotoUrl = "",
-                latitude = 0.0,
-                longitude = 0.0
-            )
-        }) {
-            Text("Adicionar Desafio")
-        }
-
-        Button(onClick = {
-            viewModel.createQuest(
-                Quest(
-                    name = questName,
-                    description = questDescription,
-                    photoUrl = questImageUrl,
-                    startDate = questStartDate,
-                    endDate = questEndDate,
-                    latitude = questLatitude.toDouble(),
-                    longitude = questLongitude.toDouble()
-                ),
-                challenges = questChallenges
-            )
-        }) {
-            Text("Criar Quest")
+            else -> {}
         }
     }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Create New Quest") },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        enabled = uiState != QuestUiState.Loading
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Seção de informações básicas
+            Text(
+                text = "Quest Information",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Campo para nome da quest
+            OutlinedTextField(
+                value = questName,
+                onValueChange = { questName = it },
+                label = { Text("Quest Name") },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                isError = questName.isBlank()
+            )
+
+            // Campo para descrição
+            OutlinedTextField(
+                value = questDescription,
+                onValueChange = { questDescription = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                maxLines = 3
+            )
+
+            // Campo para URL da imagem
+            OutlinedTextField(
+                value = questImageUrl,
+                onValueChange = { questImageUrl = it },
+                label = { Text("Image URL") },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+            )
+
+            // Seção de localização
+            Text(
+                text = "Location",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = questLatitude,
+                    onValueChange = { questLatitude = it.filter { c -> c.isDigit() || c == '.' || c == '-' } },
+                    label = { Text("Latitude") },
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = questLongitude,
+                    onValueChange = { questLongitude = it.filter { c -> c.isDigit() || c == '.' || c == '-' } },
+                    label = { Text("Longitude") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+
+            // Seção de datas
+            Text(
+                text = "Dates",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                // Date picker simplificado (poderia ser melhorado com um DatePickerDialog)
+                CustomDatePicker(
+                    selectedDate = questStartDate,
+                    onDateSelected = { questStartDate = it },
+                    label = "Start Date",
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                )
+
+                CustomDatePicker(
+                    selectedDate = questEndDate,
+                    onDateSelected = { questEndDate = it },
+                    label = "End Date",
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                )
+            }
+
+            // Seção de desafios
+            Text(
+                text = "Challenges",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+
+            questChallenges.forEachIndexed { index, challenge ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Challenge ${index + 1}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        OutlinedTextField(
+                            value = challenge.name,
+                            onValueChange = { newName ->
+                                questChallenges = questChallenges.toMutableList().apply {
+                                    this[index] = this[index].copy(name = newName)
+                                }
+                            },
+                            label = { Text("Name") },
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = challenge.description,
+                            onValueChange = { newDescription ->
+                                questChallenges = questChallenges.toMutableList().apply {
+                                    this[index] = this[index].copy(description = newDescription)
+                                }
+                            },
+                            label = { Text("Description") },
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            maxLines = 3
+                        )
+
+                        OutlinedTextField(
+                            value = challenge.hint,
+                            onValueChange = { newHint ->
+                                questChallenges = questChallenges.toMutableList().apply {
+                                    this[index] = this[index].copy(hint = newHint)
+                                }
+                            },
+                            label = { Text("Hint") },
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            maxLines = 2
+                        )
+
+                        OutlinedTextField(
+                            value = challenge.hintPhotoUrl,
+                            onValueChange = { newHintPhotoUrl ->
+                                questChallenges = questChallenges.toMutableList().apply {
+                                    this[index] = this[index].copy(hintPhotoUrl = newHintPhotoUrl)
+                                }
+                            },
+                            label = { Text("Hint Photo URL") },
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+                        )
+
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = challenge.latitude.toString(),
+                                onValueChange = { newLatitude ->
+                                    questChallenges = questChallenges.toMutableList().apply {
+                                        this[index] = this[index].copy(
+                                            latitude = newLatitude.toDoubleOrNull() ?: 0.0
+                                        )
+                                    }
+                                },
+                                label = { Text("Latitude") },
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+
+                            OutlinedTextField(
+                                value = challenge.longitude.toString(),
+                                onValueChange = { newLongitude ->
+                                    questChallenges = questChallenges.toMutableList().apply {
+                                        this[index] = this[index].copy(
+                                            longitude = newLongitude.toDoubleOrNull() ?: 0.0
+                                        )
+                                    }
+                                },
+                                label = { Text("Longitude") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Botão para adicionar novo desafio
+            Button(
+                onClick = {
+                    questChallenges = questChallenges + Challenge(
+                        name = "",
+                        description = "",
+                        hintPhotoUrl = "",
+                        latitude = 0.0,
+                        longitude = 0.0,
+                        orderInQuest = questChallenges.size + 1
+
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            ) {
+                Text("Add Challenge")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botão para criar a quest
+            Button(
+                onClick = {
+                    if (validateQuestForm(questName, questChallenges)) {
+                        viewModel.createQuest(
+                            Quest(
+                                name = questName,
+                                description = questDescription,
+                                photoUrl = questImageUrl,
+                                startDate = questStartDate,
+                                endDate = questEndDate,
+                                latitude = questLatitude.toDoubleOrNull() ?: 0.0,
+                                longitude = questLongitude.toDoubleOrNull() ?: 0.0,
+                                isActive = true
+                            ),
+                            challenges = questChallenges
+                        )
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Please fill all required fields",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = uiState != QuestUiState.Loading
+            ) {
+                if (uiState == QuestUiState.Loading) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Text("Create Quest")
+                }
+            }
+        }
+    }
+}
+
+fun validateQuestForm(name: String, challenges: List<Challenge>): Boolean {
+    if (name.isBlank()) return false
+
+    challenges.forEach { challenge ->
+        if (challenge.name.isBlank() || challenge.description.isBlank()) {
+            return false
+        }
+    }
+
+    return true
 }

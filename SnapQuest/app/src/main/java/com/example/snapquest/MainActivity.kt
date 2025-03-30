@@ -24,10 +24,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.snapquest.navigation.Screens
+import com.example.snapquest.screens.ChallengeDetailsScreen
+import com.example.snapquest.screens.CreateQuestScreen
 import com.example.snapquest.screens.DailyQuestScreen
 import com.example.snapquest.screens.EditProfileScreen
 import com.example.snapquest.screens.HomeScreen
 import com.example.snapquest.screens.NotificationsScreen
+import com.example.snapquest.screens.QuestDetailsScreen
 import com.example.snapquest.screens.QuestsScreen
 import com.example.snapquest.screens.SettingsScreen
 import com.example.snapquest.screens.SignInScreen
@@ -180,7 +183,49 @@ class MainActivity : ComponentActivity() {
                             )
 
                             QuestsScreen(
-                                modifier = Modifier,
+                                navController = navController,
+                                viewModel = questViewModel
+                            )
+                        }
+                        composable(Screens.CreateQuest.route) {
+                            val questViewModel = viewModel<QuestViewModel>(
+                                factory = QuestViewModelFactory(
+                                    (application as SnapQuestApp).userRepository,
+                                    (application as SnapQuestApp).questRepository
+                                )
+                            )
+                            CreateQuestScreen(
+                                navController = navController,
+                                viewModel = questViewModel
+                            )
+                        }
+                        composable(Screens.QuestDetails.route) { backStackEntry ->
+                            val questId = backStackEntry.arguments?.getString("questId") ?: return@composable
+                            val questViewModel = viewModel<QuestViewModel>(
+                                factory = QuestViewModelFactory(
+                                    (application as SnapQuestApp).userRepository,
+                                    (application as SnapQuestApp).questRepository
+                                )
+                            )
+                            QuestDetailsScreen(
+                                questId = questId,
+                                navController = navController,
+                                viewModel = questViewModel
+                            )
+                        }
+
+                        composable(Screens.ChallengeDetails.route) { backStackEntry ->
+                            val questId = backStackEntry.arguments?.getString("questId") ?: return@composable
+                            val challengeId = backStackEntry.arguments?.getString("challengeId") ?: return@composable
+                            val questViewModel = viewModel<QuestViewModel>(
+                                factory = QuestViewModelFactory(
+                                    (application as SnapQuestApp).userRepository,
+                                    (application as SnapQuestApp).questRepository
+                                )
+                            )
+                            ChallengeDetailsScreen(
+                                questId = questId,
+                                challengeId = challengeId,
                                 navController = navController,
                                 viewModel = questViewModel
                             )

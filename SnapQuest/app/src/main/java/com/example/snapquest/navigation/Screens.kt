@@ -9,4 +9,11 @@ sealed class Screens(val route: String) {
     object Scan : Screens("scan")
     object Settings : Screens("settings")
     object EditProfile : Screens("editProfile")
+    object CreateQuest : Screens("createQuest")
+    object QuestDetails : Screens("questDetails/{questId}") {
+        fun createRoute(questId: String) = "questDetails/$questId"
+    }
+    object ChallengeDetails : Screens("challengeDetails/{questId}/{challengeId}") {
+        fun createRoute(questId: String, challengeId: String) = "challengeDetails/$questId/$challengeId"
+    }
 }

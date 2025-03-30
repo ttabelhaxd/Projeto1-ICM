@@ -12,5 +12,7 @@ data class Quest(
     var isActive: Boolean = false,
     var latitude: Double = 0.0,
     var longitude: Double = 0.0,
-    var creatorId: String = ""
+    var creatorId: String = "",
+    val participants: List<String> = emptyList(),
+    val createdAt: Date = Date()
 )
