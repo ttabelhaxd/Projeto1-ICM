@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.snapquest.ui.components.QuestImageLoader
 import com.example.snapquest.viewModels.QuestViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,6 +69,14 @@ fun ChallengeDetailsScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+
+                if (ch.hintPhotoUrl.isNotEmpty()) {
+                    QuestImageLoader(
+                        imageUrl = ch.hintPhotoUrl,
+                        contentDescription = "Challenge hint image",
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
 
                 if (ch.hint.isNotEmpty()) {
                     Text(

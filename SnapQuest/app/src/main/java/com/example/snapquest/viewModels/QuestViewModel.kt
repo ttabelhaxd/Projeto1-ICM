@@ -8,7 +8,9 @@ import com.example.snapquest.models.Quest
 import com.example.snapquest.models.User
 import com.example.snapquest.models.UserQuest
 import com.example.snapquest.repositories.FirestoreQuestRepository
+import com.example.snapquest.repositories.FirestoreStorageRepository
 import com.example.snapquest.repositories.FirestoreUserRepository
+import com.google.firestore.v1.FirestoreGrpc.FirestoreStub
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +32,8 @@ sealed class QuestUiState {
 
 class QuestViewModel(
     private val firestoreUserRepository: FirestoreUserRepository,
-    private val questRepository: FirestoreQuestRepository
+    private val questRepository: FirestoreQuestRepository,
+    private val storageRepository: FirestoreStorageRepository
 ) : ViewModel() {
     private val _quests = MutableStateFlow<List<Quest>>(emptyList())
     val quests: StateFlow<List<Quest>> = _quests
@@ -170,23 +173,23 @@ class QuestViewModel(
         }
     }
 
-    fun canAccessChallenge(userId: String, questId: String, challengeId: String): Flow<Boolean> = flow {
-        try {
-            val result = questRepository.canAccessChallenge(userId, questId, challengeId)
-            emit(result)
-        } catch (e: Exception) {
-            emit(false)
-        }
+    suspend fun uploadQuestPhoto(localPath: String): String {
+        return storageRepository.uploadQuestPhoto(localPath)
+    }
+
+    suspend fun uploadChallengePhoto(localPath: String): String {
+        return storageRepository.uploadChallengePhoto(localPath)
     }
 }
 
 class QuestViewModelFactory(
     private val firestoreUserRepository: FirestoreUserRepository,
-    private val firestoreQuestRepository: FirestoreQuestRepository
+    private val firestoreQuestRepository: FirestoreQuestRepository,
+    private val firestoreStorageRepository: FirestoreStorageRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(QuestViewModel::class.java)) {
-            return QuestViewModel(firestoreUserRepository, firestoreQuestRepository) as T
+            return QuestViewModel(firestoreUserRepository, firestoreQuestRepository, firestoreStorageRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

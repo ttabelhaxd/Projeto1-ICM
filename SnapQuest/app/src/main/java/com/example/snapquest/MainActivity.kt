@@ -59,6 +59,10 @@ class MainActivity : ComponentActivity() {
         (application as SnapQuestApp).questRepository
     }
 
+    private val storageRepository by lazy {
+        (application as SnapQuestApp).storageRepository
+    }
+
     private val googleAuthUiClient by lazy {
         GoogleAuthUiClient(
             context = applicationContext,
@@ -157,20 +161,23 @@ class MainActivity : ComponentActivity() {
                                 factory = HomeViewModelFactory(userRepository)
                             )
                             val questViewModel = viewModel<QuestViewModel>(
-                                factory = QuestViewModelFactory(userRepository, questRepository)
+                                factory = QuestViewModelFactory(userRepository, questRepository, storageRepository)
                             )
-                            val locationPermissions = rememberMultiplePermissionsState(
+                            val allPermissions = rememberMultiplePermissionsState(
                                 permissions = listOf(
                                     android.Manifest.permission.ACCESS_COARSE_LOCATION,
                                     android.Manifest.permission.ACCESS_FINE_LOCATION,
                                     android.Manifest.permission.POST_NOTIFICATIONS,
                                     android.Manifest.permission.ACCESS_NOTIFICATION_POLICY,
+                                    android.Manifest.permission.CAMERA,
+                                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
                                 )
                             )
 
                             // Request location permissions when the app get launched
                             LaunchedEffect(true) {
-                                locationPermissions.launchMultiplePermissionRequest()
+                                allPermissions.launchMultiplePermissionRequest()
                             }
 
                             HomeScreen(
@@ -182,7 +189,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screens.Quests.route) {
                             val questViewModel = viewModel<QuestViewModel>(
-                                factory = QuestViewModelFactory(userRepository, questRepository)
+                                factory = QuestViewModelFactory(userRepository, questRepository, storageRepository)
                             )
 
                             QuestsScreen(
@@ -194,7 +201,8 @@ class MainActivity : ComponentActivity() {
                             val questViewModel = viewModel<QuestViewModel>(
                                 factory = QuestViewModelFactory(
                                     (application as SnapQuestApp).userRepository,
-                                    (application as SnapQuestApp).questRepository
+                                    (application as SnapQuestApp).questRepository,
+                                    (application as SnapQuestApp).storageRepository
                                 )
                             )
                             CreateQuestScreen(
@@ -207,7 +215,8 @@ class MainActivity : ComponentActivity() {
                             val questViewModel = viewModel<QuestViewModel>(
                                 factory = QuestViewModelFactory(
                                     (application as SnapQuestApp).userRepository,
-                                    (application as SnapQuestApp).questRepository
+                                    (application as SnapQuestApp).questRepository,
+                                    (application as SnapQuestApp).storageRepository
                                 )
                             )
                             QuestDetailsScreen(
@@ -223,7 +232,8 @@ class MainActivity : ComponentActivity() {
                             val questViewModel = viewModel<QuestViewModel>(
                                 factory = QuestViewModelFactory(
                                     (application as SnapQuestApp).userRepository,
-                                    (application as SnapQuestApp).questRepository
+                                    (application as SnapQuestApp).questRepository,
+                                    (application as SnapQuestApp).storageRepository
                                 )
                             )
                             ChallengeDetailsScreen(

@@ -47,9 +47,11 @@ import com.example.snapquest.models.Quest
 import com.example.snapquest.ui.components.CustomDatePicker
 import com.example.snapquest.ui.components.LocationPickerDialog
 import com.example.snapquest.ui.components.LocationSelector
+import com.example.snapquest.ui.components.PhotoUploader
 import com.example.snapquest.viewModels.QuestUiState
 import com.example.snapquest.viewModels.QuestViewModel
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -68,6 +70,8 @@ fun CreateQuestScreen(
     var questLatitude by remember { mutableStateOf("") }
     var questLongitude by remember { mutableStateOf("") }
     var questChallenges by remember { mutableStateOf(listOf<Challenge>()) }
+    var questPhotoPath by remember { mutableStateOf("") }
+    var challengePhotoPaths by remember { mutableStateOf<List<String>>(emptyList()) }
 
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -140,13 +144,24 @@ fun CreateQuestScreen(
                 maxLines = 3
             )
 
-            // Campo para URL da imagem
-            OutlinedTextField(
-                value = questImageUrl,
-                onValueChange = { questImageUrl = it },
-                label = { Text("Image URL") },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+            // Campo para upload da imagem
+            Text(
+                text = "Quest Photo",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            PhotoUploader(
+                currentPhotoPath = questPhotoPath,
+                onPhotoSelected = { path ->
+                    questPhotoPath = path
+                    coroutineScope.launch {
+                        questPhotoPath = ""
+                        delay(100)
+                        questPhotoPath = path
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
             )
 
             // Seção de localização
@@ -269,16 +284,32 @@ fun CreateQuestScreen(
                             maxLines = 2
                         )
 
-                        OutlinedTextField(
-                            value = challenge.hintPhotoUrl,
-                            onValueChange = { newHintPhotoUrl ->
-                                questChallenges = questChallenges.toMutableList().apply {
-                                    this[index] = this[index].copy(hintPhotoUrl = newHintPhotoUrl)
+                        Text(
+                            text = "Challenge Photo",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+
+                        PhotoUploader(
+                            currentPhotoPath = challengePhotoPaths.getOrNull(index) ?: "",
+                            onPhotoSelected = { path ->
+                                challengePhotoPaths = challengePhotoPaths.toMutableList().apply {
+                                    if (index >= size) {
+                                        add(path)
+                                    } else {
+                                        set(index, path)
+                                    }
+                                }
+                                coroutineScope.launch {
+                                    val tempList = challengePhotoPaths.toMutableList()
+                                    tempList[index] = ""
+                                    delay(100)
+                                    challengePhotoPaths = tempList
+                                    tempList[index] = path
+                                    challengePhotoPaths = tempList
                                 }
                             },
-                            label = { Text("Hint Photo URL") },
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Row(modifier = Modifier.fillMaxWidth()) {
@@ -383,26 +414,48 @@ fun CreateQuestScreen(
             // Botão para criar a quest
             Button(
                 onClick = {
-                    if (validateQuestForm(questName, questChallenges, questLatitude, questLongitude)) {
-                        viewModel.createQuest(
-                            Quest(
-                                name = questName,
-                                description = questDescription,
-                                photoUrl = questImageUrl,
-                                startDate = questStartDate,
-                                endDate = questEndDate,
-                                latitude = questLatitude.toDoubleOrNull() ?: 0.0,
-                                longitude = questLongitude.toDoubleOrNull() ?: 0.0,
-                                isActive = true
-                            ),
-                            challenges = questChallenges
-                        )
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "Please fill all required fields",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    coroutineScope.launch {
+                        if (validateQuestForm(questName, questChallenges, questLatitude, questLongitude)) {
+                            try{
+                                val photoUrl = if (questPhotoPath.isNotEmpty()) {
+                                    viewModel.uploadQuestPhoto(questPhotoPath)
+                                } else ""
+
+                                val updatedChallenges = questChallenges.mapIndexed { idx, challenge ->
+                                    val path = challengePhotoPaths.getOrNull(idx) ?: ""
+                                    if (path.isNotEmpty()) {
+                                        val url = viewModel.uploadChallengePhoto(path)
+                                        challenge.copy(hintPhotoUrl = url)
+                                    } else {
+                                        challenge
+                                    }
+                                }
+
+                                viewModel.createQuest(
+                                    Quest(
+                                        name = questName,
+                                        description = questDescription,
+                                        photoUrl = photoUrl,
+                                        startDate = questStartDate,
+                                        endDate = questEndDate,
+                                        latitude = questLatitude.toDoubleOrNull() ?: 0.0,
+                                        longitude = questLongitude.toDoubleOrNull() ?: 0.0,
+                                        isActive = true
+
+                                    ),
+                                    challenges = updatedChallenges
+                                )
+
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Please fill all required fields",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -423,11 +476,11 @@ fun validateQuestForm(name: String, challenges: List<Challenge>, latitude: Strin
     if (challenges.isEmpty()) return false
     if (latitude.isBlank() || longitude.isBlank()) return false
 
-    challenges.forEach { challenge ->
-        if (challenge.name.isBlank() || challenge.description.isBlank() || challenge.hint.isBlank() || challenge.hintPhotoUrl.isBlank() || challenge.latitude == 0.0 || challenge.longitude == 0.0) {
-            return false
-        }
-    }
+    //challenges.forEach { challenge ->
+    //    if (challenge.name.isBlank() || challenge.description.isBlank() || challenge.hint.isBlank() || challenge.hintPhotoUrl.isBlank() || challenge.latitude == 0.0 || challenge.longitude == 0.0) {
+    //        return false
+    //    }
+    //}
 
     return true
 }

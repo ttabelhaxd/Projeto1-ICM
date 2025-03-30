@@ -11,27 +11,43 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.snapquest.R
 import com.example.snapquest.models.Quest
 
 @Composable
 fun QuestDetailsSection(quest: Quest) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = quest.name,
-                style = MaterialTheme.typography.headlineSmall
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (quest.photoUrl.isNotEmpty()) {
+            QuestImageLoader(
+                imageUrl = quest.photoUrl,
+                contentDescription = "Quest image: ${quest.name}",
+                modifier = Modifier.padding(bottom = 8.dp)
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = quest.description,
-                style = MaterialTheme.typography.bodyMedium
+        } else {
+            QuestImageLoader(
+                imageUrl = "",
+                contentDescription = "Default quest image",
+                modifier = Modifier.padding(bottom = 8.dp)
             )
+        }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = quest.name,
+                    style = MaterialTheme.typography.headlineSmall
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            QuestMetadata(quest)
+                Text(
+                    text = quest.description,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                QuestMetadata(quest)
+            }
         }
     }
 }

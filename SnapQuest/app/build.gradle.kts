@@ -101,6 +101,8 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.play.services.auth)
 
+    implementation(libs.firebase.storage.ktx)
+
     // dependency to access the camera
     implementation(libs.androidx.camera.core)
 
