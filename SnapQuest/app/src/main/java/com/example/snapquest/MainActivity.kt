@@ -35,7 +35,6 @@ import com.example.snapquest.screens.QuestsScreen
 import com.example.snapquest.screens.SettingsScreen
 import com.example.snapquest.screens.SignInScreen
 import com.example.snapquest.signin.GoogleAuthUiClient
-import com.example.snapquest.signin.UserData
 import com.example.snapquest.ui.theme.SnapQuestTheme
 import com.example.snapquest.viewModels.HomeViewModel
 import com.example.snapquest.viewModels.HomeViewModelFactory

@@ -1,6 +1,8 @@
 package com.example.snapquest.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,19 +31,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.snapquest.manages.LocationManager
 import com.example.snapquest.models.Challenge
 import com.example.snapquest.models.Quest
 import com.example.snapquest.ui.components.CustomDatePicker
+import com.example.snapquest.ui.components.LocationPickerDialog
+import com.example.snapquest.ui.components.LocationSelector
 import com.example.snapquest.viewModels.QuestUiState
 import com.example.snapquest.viewModels.QuestViewModel
+import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.launch
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,6 +72,10 @@ fun CreateQuestScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    val coroutineScope = rememberCoroutineScope()
+    var showQuestLocationPicker by remember { mutableStateOf(false) }
+    var showChallengeLocationPickerIndex by remember { mutableIntStateOf(-1) }
+
     // Fecha a tela automaticamente após criar a quest
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -75,6 +88,10 @@ fun CreateQuestScreen(
             }
             else -> {}
         }
+    }
+
+    LaunchedEffect(Unit) {
+        LocationManager.initialize(context)
     }
 
     Scaffold(
@@ -139,24 +156,41 @@ fun CreateQuestScreen(
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
             )
 
-            Row(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = questLatitude,
-                    onValueChange = { questLatitude = it.filter { c -> c.isDigit() || c == '.' || c == '-' } },
-                    label = { Text("Latitude") },
-                    modifier = Modifier.weight(1f).padding(end = 8.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
+            LocationSelector(
+                latitude = questLatitude,
+                longitude = questLongitude,
+                onSelectLocation = { showQuestLocationPicker = true },
+                onUseCurrentLocation = {
+                    coroutineScope.launch {
+                        val location = LocationManager.getLastLocation()
+                        location?.let {
+                            questLatitude = it.latitude.toString()
+                            questLongitude = it.longitude.toString()
+                        } ?: run {
+                            Toast.makeText(context, "Could not get current location", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
-                OutlinedTextField(
-                    value = questLongitude,
-                    onValueChange = { questLongitude = it.filter { c -> c.isDigit() || c == '.' || c == '-' } },
-                    label = { Text("Longitude") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            if (showQuestLocationPicker) {
+                val initialLocation = if (questLatitude.isNotBlank() && questLongitude.isNotBlank()) {
+                    LatLng(questLatitude.toDouble(), questLongitude.toDouble())
+                } else {
+                    null
+                }
+
+                LocationPickerDialog(
+                    initialLocation = initialLocation,
+                    onConfirm = { latLng ->
+                        questLatitude = latLng.latitude.toString()
+                        questLongitude = latLng.longitude.toString()
+                        showQuestLocationPicker = false
+                    },
+                    onDismiss = { showQuestLocationPicker = false }
                 )
             }
-
             // Seção de datas
             Text(
                 text = "Dates",
@@ -250,30 +284,75 @@ fun CreateQuestScreen(
                         Row(modifier = Modifier.fillMaxWidth()) {
                             OutlinedTextField(
                                 value = challenge.latitude.toString(),
-                                onValueChange = { newLatitude ->
-                                    questChallenges = questChallenges.toMutableList().apply {
-                                        this[index] = this[index].copy(
-                                            latitude = newLatitude.toDoubleOrNull() ?: 0.0
-                                        )
-                                    }
-                                },
+                                onValueChange = {},
                                 label = { Text("Latitude") },
                                 modifier = Modifier.weight(1f).padding(end = 8.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                readOnly = true
                             )
 
                             OutlinedTextField(
                                 value = challenge.longitude.toString(),
-                                onValueChange = { newLongitude ->
-                                    questChallenges = questChallenges.toMutableList().apply {
-                                        this[index] = this[index].copy(
-                                            longitude = newLongitude.toDoubleOrNull() ?: 0.0
-                                        )
-                                    }
-                                },
+                                onValueChange = {},
                                 label = { Text("Longitude") },
                                 modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                readOnly = true
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Button(
+                                onClick = { showChallengeLocationPickerIndex = index },
+                                modifier = Modifier.weight(1f).padding(end = 4.dp)
+                            ) {
+                                Text("Select on Map")
+                            }
+
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        val location = LocationManager.getLastLocation()
+                                        location?.let {
+                                            questChallenges = questChallenges.toMutableList().apply {
+                                                this[index] = this[index].copy(
+                                                    latitude = it.latitude,
+                                                    longitude = it.longitude
+                                                )
+                                            }
+                                        } ?: run {
+                                            Toast.makeText(context, "Could not get current location", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).padding(start = 4.dp)
+                            ) {
+                                Text("Use Current")
+                            }
+                        }
+
+                        // Location picker para os challenges
+                        if (showChallengeLocationPickerIndex >= 0) {
+                            val challenge = questChallenges[showChallengeLocationPickerIndex]
+                            val initialLocation = if (challenge.latitude != 0.0 && challenge.longitude != 0.0) {
+                                LatLng(challenge.latitude, challenge.longitude)
+                            } else {
+                                null
+                            }
+
+                            LocationPickerDialog(
+                                initialLocation = initialLocation,
+                                onConfirm = { latLng ->
+                                    questChallenges = questChallenges.toMutableList().apply {
+                                        this[showChallengeLocationPickerIndex] = this[showChallengeLocationPickerIndex].copy(
+                                            latitude = latLng.latitude,
+                                            longitude = latLng.longitude
+                                        )
+                                    }
+                                    showChallengeLocationPickerIndex = -1
+                                },
+                                onDismiss = { showChallengeLocationPickerIndex = -1 }
                             )
                         }
                     }
@@ -300,10 +379,11 @@ fun CreateQuestScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+
             // Botão para criar a quest
             Button(
                 onClick = {
-                    if (validateQuestForm(questName, questChallenges)) {
+                    if (validateQuestForm(questName, questChallenges, questLatitude, questLongitude)) {
                         viewModel.createQuest(
                             Quest(
                                 name = questName,
@@ -338,11 +418,13 @@ fun CreateQuestScreen(
     }
 }
 
-fun validateQuestForm(name: String, challenges: List<Challenge>): Boolean {
+fun validateQuestForm(name: String, challenges: List<Challenge>, latitude: String, longitude: String): Boolean {
     if (name.isBlank()) return false
+    if (challenges.isEmpty()) return false
+    if (latitude.isBlank() || longitude.isBlank()) return false
 
     challenges.forEach { challenge ->
-        if (challenge.name.isBlank() || challenge.description.isBlank()) {
+        if (challenge.name.isBlank() || challenge.description.isBlank() || challenge.hint.isBlank() || challenge.hintPhotoUrl.isBlank() || challenge.latitude == 0.0 || challenge.longitude == 0.0) {
             return false
         }
     }
