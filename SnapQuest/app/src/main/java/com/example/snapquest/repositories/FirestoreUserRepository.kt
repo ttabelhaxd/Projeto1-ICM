@@ -101,6 +101,22 @@ class FirestoreUserRepository @Inject constructor() {
         }
     }
 
+    suspend fun refreshUserData(uid: String) {
+        try {
+            val snapshot = usersRef.document(uid).get().await()
+            if (snapshot.exists()) {
+                _currentUser.value = snapshot.toObject(User::class.java)?.copy(
+                    uid = uid,
+                    questsCompleted = snapshot.getLong("questsCompleted")?.toInt() ?: 0,
+                    challengesCompleted = snapshot.getLong("challengesCompleted")?.toInt() ?: 0
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("FirestoreUserRepo", "Error refreshing user data", e)
+            throw e
+        }
+    }
+
     fun resetCurrentUser() {
         _currentUser.value = null
     }

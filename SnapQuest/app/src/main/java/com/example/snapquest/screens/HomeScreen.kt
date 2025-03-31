@@ -10,10 +10,12 @@ import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.LocationSearching
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.snapquest.ui.components.LoadingScreen
 import com.example.snapquest.ui.components.Navbar
 import com.example.snapquest.ui.components.ProgressItem
 import com.example.snapquest.ui.components.TitleMessage
@@ -36,118 +39,139 @@ fun HomeScreen(
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
     val activeUserQuests by questViewModel.userQuests.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     val ongoingQuest = activeUserQuests.firstOrNull { !it.isQuestCompleted }
     val quests by questViewModel.quests.collectAsState()
     val questName = quests.firstOrNull { it.id == ongoingQuest?.questId }?.name
 
-    Scaffold(
-        bottomBar = { Navbar(modifier = Modifier, navController = navController) }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            TitleMessage(
-                modifier = modifier,
-                text1 = "Hello, ",
-                text2 = viewModel.getName()
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
+    LaunchedEffect(Unit) {
+        viewModel.refreshUserData()
+        questViewModel.fetchUserQuests()
+    }
+    if (currentUser == null) {
+        LoadingScreen()
+    } else {
+        Scaffold(
+            bottomBar = { Navbar(modifier = Modifier, navController = navController) }
+        ) { paddingValues ->
+            Box(modifier = Modifier.fillMaxSize()) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Your Progress",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                    TitleMessage(
+                        modifier = modifier,
+                        text1 = "Hello, ",
+                        text2 = viewModel.getName()
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     ) {
-                        ProgressItem(
-                            title = "Quests",
-                            count = currentUser?.questsCompleted ?: 0,
-                            icon = Icons.Outlined.LocationSearching
-                        )
-                        ProgressItem(
-                            title = "Challenges",
-                            count = currentUser?.challengesCompleted ?: 0,
-                            icon = Icons.AutoMirrored.Outlined.ReceiptLong
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            ongoingQuest?.let { quest ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .clickable {
-                            navController.navigate("questDetails/${quest.questId}")
-                        },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Continue Your Quest",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "You have an ongoing quest to complete!",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "Quest Name: ${questName ?: "Unknown"}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-
-                        val completed = quest.completedChallenges.size
-                        val total = questViewModel.quests.value.firstOrNull { it.id == quest.questId }?.participants?.size ?: 0
-
-                        if (total > 0) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
-                                text = "Progress: $completed/$total challenges",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
+                                text = "Your Progress",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
                             )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                ProgressItem(
+                                    title = "Quests",
+                                    count = currentUser?.questsCompleted ?: 0,
+                                    icon = Icons.Outlined.LocationSearching
+                                )
+                                ProgressItem(
+                                    title = "Challenges",
+                                    count = currentUser?.challengesCompleted ?: 0,
+                                    icon = Icons.AutoMirrored.Outlined.ReceiptLong
+                                )
+                            }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    ongoingQuest?.let { quest ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                                .clickable {
+                                    navController.navigate("questDetails/${quest.questId}")
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Continue Your Quest",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = "You have an ongoing quest to complete!",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = "Quest Name: ${questName ?: "Unknown"}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+
+                                val completed = quest.completedChallenges.size
+                                val total =
+                                    questViewModel.quests.value.firstOrNull { it.id == quest.questId }?.participants?.size
+                                        ?: 0
+
+                                if (total > 0) {
+                                    Text(
+                                        text = "Progress: $completed/$total challenges",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                if (isRefreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }

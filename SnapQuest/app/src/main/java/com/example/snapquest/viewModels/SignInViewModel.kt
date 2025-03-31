@@ -20,6 +20,7 @@ class SignInViewModel(
     val state = _state.asStateFlow()
 
     fun onSignInResult(result: SignInResult) {
+        _state.update { it.copy(isLoading = true) }
         result.data?.let { userData ->
             viewModelScope.launch {
                 try {
@@ -37,15 +38,22 @@ class SignInViewModel(
                             challengesCompleted = 0
                         )
                         firestoreUserRepository.registerUser(newUser).onSuccess {
-                            _state.update { it.copy(isSignInSuccessful = true) }
+                            _state.update { it.copy(isSignInSuccessful = true, isLoading = false) }
                         }.onFailure { e ->
-                            _state.update { it.copy(signInError = "Erro ao registrar: ${e.message}") }
+                            _state.update { it.copy(signInError = "Erro ao registrar: ${e.message}", isLoading = false) }
                         }
                     } else {
-                        _state.update { it.copy(isSignInSuccessful = true) }
+                        firestoreUserRepository.refreshUserData(userId)
+                        _state.update {
+                            it.copy(
+                                isSignInSuccessful = true,
+                                isLoading = false
+                            )
+                        }
+
                     }
                 } catch (e: Exception) {
-                    _state.update { it.copy(signInError = "Erro: ${e.message}") }
+                    _state.update { it.copy(signInError = "Erro: ${e.message}", isLoading = false) }
                 }
             }
         }
@@ -57,8 +65,9 @@ class SignInViewModel(
 
     fun loginUser(userData: UserData) {
         viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
             if (userData.userId.isNullOrBlank()) {
-                _state.update { it.copy(signInError = "Invalid user data") }
+                _state.update { it.copy(signInError = "Invalid user data", isLoading = false) }
                 return@launch
             }
 
@@ -74,9 +83,9 @@ class SignInViewModel(
                     challengesCompleted = existingUser?.challengesCompleted ?: 0
                 )
                 firestoreUserRepository.registerUser(user)
-                _state.update { it.copy(isSignInSuccessful = true) }
+                _state.update { it.copy(isSignInSuccessful = true, isLoading = false) }
             } catch (e: Exception) {
-                _state.update { it.copy(signInError = "Failed to save user data: ${e.message}") }
+                _state.update { it.copy(signInError = "Failed to save user data: ${e.message}", isLoading = false) }
             }
         }
     }

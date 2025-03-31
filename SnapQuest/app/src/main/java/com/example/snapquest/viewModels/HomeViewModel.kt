@@ -17,6 +17,9 @@ class HomeViewModel(
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         viewModelScope.launch {
             firestoreUserRepository.currentUser.collect { user ->
@@ -49,6 +52,21 @@ class HomeViewModel(
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error in updateUserProfile", e)
                 throw e
+            }
+        }
+    }
+
+    fun refreshUserData() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                currentUser.value?.uid?.let { uid ->
+                    firestoreUserRepository.refreshUserData(uid)
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error refreshing data", e)
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }
