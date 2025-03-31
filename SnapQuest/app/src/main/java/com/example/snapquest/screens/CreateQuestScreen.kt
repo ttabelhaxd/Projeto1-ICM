@@ -64,7 +64,6 @@ fun CreateQuestScreen(
 ) {
     var questName by remember { mutableStateOf("") }
     var questDescription by remember { mutableStateOf("") }
-    var questImageUrl by remember { mutableStateOf("") }
     var questStartDate by remember { mutableStateOf(Date()) }
     var questEndDate by remember { mutableStateOf(Date()) }
     var questLatitude by remember { mutableStateOf("") }

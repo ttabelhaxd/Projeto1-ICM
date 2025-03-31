@@ -28,13 +28,6 @@ object LocationManager {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             try {
-                // Usa alta precisão para a localização atual
-                val locationRequest = LocationRequest.create().apply {
-                    priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-                    interval = 10000
-                    fastestInterval = 5000
-                }
-
                 val cancellationToken = CancellationTokenSource()
                 val locationResult = fusedLocationClient.getCurrentLocation(
                     LocationRequest.PRIORITY_HIGH_ACCURACY,

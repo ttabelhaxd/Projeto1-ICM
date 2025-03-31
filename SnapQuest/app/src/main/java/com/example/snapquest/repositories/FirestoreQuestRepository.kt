@@ -198,21 +198,6 @@ class FirestoreQuestRepository {
         }
     }
 
-    suspend fun canAccessChallenge(userId: String, questId: String, challengeId: String): Boolean {
-        return try {
-            val userQuestRef = db.collection("userQuests").document("${userId}_$questId")
-            val userQuest = userQuestRef.get().await().toObject<UserQuest>()
-
-            val challenges = getQuestChallenges(questId).sortedBy { it.orderInQuest }
-            val currentChallengeIndex = challenges.indexOfFirst { it.id == challengeId }
-
-            currentChallengeIndex == 0 ||
-                    userQuest?.completedChallenges?.contains(challenges[currentChallengeIndex - 1].id) == true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     suspend fun getChallengeById(questId: String, challengeId: String): Challenge? {
         return try {
             val snapshot = questsRef.document(questId)
