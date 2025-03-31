@@ -79,7 +79,6 @@ fun CreateQuestScreen(
     var showQuestLocationPicker by remember { mutableStateOf(false) }
     var showChallengeLocationPickerIndex by remember { mutableIntStateOf(-1) }
 
-    // Fecha a tela automaticamente após criar a quest
     LaunchedEffect(uiState) {
         when (uiState) {
             is QuestUiState.QuestCreated -> {

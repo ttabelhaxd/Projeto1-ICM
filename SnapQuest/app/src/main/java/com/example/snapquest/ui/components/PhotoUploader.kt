@@ -1,9 +1,8 @@
 package com.example.snapquest.ui.components
 
-import android.content.Context
 import android.graphics.Bitmap
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.BitmapFactory
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -13,20 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.os.Environment
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.ui.res.painterResource
-import androidx.core.content.FileProvider
+import androidx.compose.ui.unit.dp
 import com.example.snapquest.R
+import com.example.snapquest.utils.ImagePickerUtils
 import kotlinx.coroutines.delay
-import java.io.File
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Composable
 fun PhotoUploader(
@@ -35,62 +25,30 @@ fun PhotoUploader(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var tempPhotoPath by remember { mutableStateOf(currentPhotoPath) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    LaunchedEffect(tempPhotoPath) {
-        if (tempPhotoPath.isNotEmpty()) {
+    val imagePicker = ImagePickerUtils.rememberImagePicker(
+        onImageSelected = { path ->
+            onPhotoSelected(path)
+        },
+        onError = { error ->
+            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+        }
+    )
+
+    LaunchedEffect(currentPhotoPath) {
+        if (currentPhotoPath.isNotEmpty()) {
             delay(100)
             try {
                 val options = BitmapFactory.Options().apply {
                     inJustDecodeBounds = false
                 }
-                val newBitmap = BitmapFactory.decodeFile(tempPhotoPath, options)
-                bitmap = newBitmap
+                bitmap = BitmapFactory.decodeFile(currentPhotoPath, options)
             } catch (e: Exception) {
-                Log.e("PhotoUploader", "Error loading image: ${e.message}")
                 bitmap = null
             }
         } else {
             bitmap = null
-        }
-    }
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val newBitmap = BitmapFactory.decodeStream(inputStream)
-                val file = createImageFile(context)
-                FileOutputStream(file).use { out ->
-                    newBitmap?.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                }
-                tempPhotoPath = file.absolutePath
-                onPhotoSelected(tempPhotoPath)
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error loading photo: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(Uri.fromFile(File(tempPhotoPath)))
-                val newBitmap = BitmapFactory.decodeStream(inputStream)
-                val file = createImageFile(context)
-                FileOutputStream(file).use { out ->
-                    newBitmap?.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                }
-                tempPhotoPath = file.absolutePath
-                onPhotoSelected(tempPhotoPath)
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error loading photo: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 
@@ -102,8 +60,7 @@ fun PhotoUploader(
             Image(
                 bitmap = bitmap!!.asImageBitmap(),
                 contentDescription = "Selected photo",
-                modifier = Modifier
-                    .size(150.dp)
+                modifier = Modifier.size(150.dp)
             )
         } else {
             Image(
@@ -118,37 +75,17 @@ fun PhotoUploader(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(onClick = {
-                val file = createImageFile(context).apply {
-                    createNewFile()
-                }
-                tempPhotoPath = file.absolutePath
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    file
-                )
-                cameraLauncher.launch(uri)
+                val file = imagePicker.createImageFile()
+                imagePicker.launchCamera(file)
             }) {
                 Text("Take Photo")
             }
 
             Button(onClick = {
-                galleryLauncher.launch("image/*")
+                imagePicker.launchGallery()
             }) {
                 Text("Choose from Gallery")
             }
         }
-    }
-}
-
-private fun createImageFile(context: Context): File {
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-    return File.createTempFile(
-        "JPEG_${timeStamp}_",
-        ".jpg",
-        storageDir
-    ).apply {
-        parentFile?.mkdirs()
     }
 }

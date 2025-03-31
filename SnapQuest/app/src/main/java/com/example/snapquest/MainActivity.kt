@@ -291,14 +291,7 @@ class MainActivity : ComponentActivity() {
                             EditProfileScreen(
                                 viewModel = homeViewModel,
                                 navController = navController,
-                                onSaveProfile = { name, email ->
-                                    lifecycleScope.launch {
-                                        homeViewModel.currentUser.value?.let { user ->
-                                            val updatedUser = user.copy(name = name, email = email)
-                                            homeViewModel.updateUserProfile(updatedUser)
-                                        }
-                                    }
-                                },
+                                storageRepository = storageRepository,
                             )
                         }
                     }
