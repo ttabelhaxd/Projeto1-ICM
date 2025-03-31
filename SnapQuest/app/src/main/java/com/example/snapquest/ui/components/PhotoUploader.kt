@@ -18,6 +18,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.ui.res.painterResource
 import androidx.core.content.FileProvider
 import com.example.snapquest.R
@@ -69,7 +70,7 @@ fun PhotoUploader(
                 tempPhotoPath = file.absolutePath
                 onPhotoSelected(tempPhotoPath)
             } catch (e: Exception) {
-                Log.e("PhotoUploader", "Error loading from gallery: ${e.message}")
+                Toast.makeText(context, "Error loading photo: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -78,10 +79,17 @@ fun PhotoUploader(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            // Força a atualização do bitmap
-            val file = File(tempPhotoPath)
-            if (file.exists()) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(Uri.fromFile(File(tempPhotoPath)))
+                val newBitmap = BitmapFactory.decodeStream(inputStream)
+                val file = createImageFile(context)
+                FileOutputStream(file).use { out ->
+                    newBitmap?.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                }
+                tempPhotoPath = file.absolutePath
                 onPhotoSelected(tempPhotoPath)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error loading photo: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -99,7 +107,7 @@ fun PhotoUploader(
             )
         } else {
             Image(
-                painter = painterResource(R.drawable.google),
+                painter = painterResource(R.drawable.placeholder_select_photo),
                 contentDescription = "Placeholder",
                 modifier = Modifier.size(150.dp)
             )

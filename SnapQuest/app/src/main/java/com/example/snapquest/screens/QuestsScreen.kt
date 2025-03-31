@@ -47,6 +47,7 @@ fun QuestsScreen(
         when (uiState) {
             is QuestUiState.QuestJoined -> {
                 Toast.makeText(context, "Joined quest successfully", Toast.LENGTH_SHORT).show()
+                QuestUiState.Idle
             }
             is QuestUiState.Error -> {
                 Toast.makeText(context, (uiState as QuestUiState.Error).message, Toast.LENGTH_SHORT).show()
