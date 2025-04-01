@@ -36,7 +36,7 @@ class FirestoreQuestRepository {
             challenges.forEach { challenge ->
                 questRef.collection("challenges")
                     .document()
-                    .set(challenge.copy(questId = questRef.id))
+                    .set(challenge.copy(questId = questRef.id, id = questRef.id))
                     .await()
             }
         } catch (e: Exception) {
@@ -166,44 +166,43 @@ class FirestoreQuestRepository {
         }
     }
 
-    fun completeChallenge(userId: String, questId: String, challengeId: String): Result<Unit> {
+    fun completeChallengeWithPhoto(
+        userId: String,
+        questId: String,
+        challengeId: String,
+        photoUrl: String
+    ): Result<Unit> {
         return try {
             val userQuestRef = db.collection("userQuests").document("${userId}_$questId")
-            val userRef = db.collection("users").document(userId)
 
             db.runTransaction { transaction ->
-                val userQuestSnapshot = transaction.get(userQuestRef)
-                if (!userQuestSnapshot.exists()) {
-                    throw IllegalStateException("User hasn't joined this quest")
-                }
-                val userQuest = userQuestSnapshot.toObject(UserQuest::class.java)!!
-                if (userQuest.completedChallenges.contains(challengeId)) {
-                    return@runTransaction
-                }
-
-                val updatedCompleted = userQuest.completedChallenges + challengeId
-
-                val totalChallenges = transaction.get(questsRef.document(questId)).getLong("totalChallenges")?.toInt() ?: 0
-                val isQuestCompleted = updatedCompleted.size == totalChallenges
-
-                transaction.update(userQuestRef,
-                    "completedChallenges", updatedCompleted,
-                    "isQuestCompleted", isQuestCompleted
+                val snapshot = transaction.get(userQuestRef)
+                val currentCompleted = snapshot.get("completedChallenges") as? List<String> ?: emptyList()
+                val currentPhotos = snapshot.get("completedPhotos") as? Map<String, String> ?: emptyMap()
+                val updatedCompleted = currentCompleted + challengeId
+                val updatedPhotos = currentPhotos + (challengeId to photoUrl)
+                val quest = transaction.get(questsRef.document(questId)).toObject(Quest::class.java)
+                    ?: throw IllegalStateException("Quest not found")
+                val isQuestCompleted = updatedCompleted.size >= quest.totalChallenges
+                val updates = mutableMapOf<String, Any>(
+                    "completedChallenges" to updatedCompleted,
+                    "completedPhotos" to updatedPhotos,
+                    "isQuestCompleted" to isQuestCompleted,
+                    "completedAt" to FieldValue.serverTimestamp()
                 )
+                transaction.update(userQuestRef, updates)
+
                 if (isQuestCompleted) {
+                    val userRef = db.collection("users").document(userId)
                     transaction.update(userRef,
                         "questsCompleted", FieldValue.increment(1),
-                        "challengesCompleted", FieldValue.increment(totalChallenges.toLong())
-                    )
-                } else {
-                    transaction.update(userRef,
-                        "challengesCompleted", FieldValue.increment(1)
+                        "challengesCompleted", FieldValue.increment(quest.totalChallenges.toLong())
                     )
                 }
             }
-
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("FirestoreQuestRepo", "Error completing challenge with photo", e)
             Result.failure(e)
         }
     }

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import coil3.Uri
 import com.example.snapquest.models.Challenge
 import com.example.snapquest.models.Quest
 import com.example.snapquest.models.User
@@ -47,6 +48,9 @@ class QuestViewModel(
 
     private val _userQuests = MutableStateFlow<List<UserQuest>>(emptyList())
     val userQuests: StateFlow<List<UserQuest>> = _userQuests
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -148,19 +152,6 @@ class QuestViewModel(
         }
     }
 
-    fun completeChallenge(userId: String, questId: String, challengeId: String) {
-        viewModelScope.launch {
-            _uiState.value = QuestUiState.Loading
-            try {
-                questRepository.completeChallenge(userId, questId, challengeId)
-                firestoreUserRepository.refreshUserData(userId)
-                _uiState.value = QuestUiState.ChallengeCompleted
-            } catch (e: Exception) {
-                _uiState.value = QuestUiState.Error(e.message ?: "Failed to complete challenge")
-            }
-        }
-    }
-
     fun getChallengeById(questId: String, challengeId: String): Flow<Challenge?> = flow {
         try {
             val challenge = questRepository.getChallengeById(questId, challengeId)
@@ -187,6 +178,40 @@ class QuestViewModel(
         } catch (e: Exception) {
             Log.e("QuestViewModel", "Error fetching participants", e)
             emit(emptyList())
+        }
+    }
+
+    fun completeChallengeWithPhoto(
+        userId: String,
+        questId: String,
+        challengeId: String,
+        photoPath: String
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _uiState.value = QuestUiState.Loading
+
+            try {
+                val photoUrl = storageRepository.uploadChallengePhoto(photoPath)
+                val result = questRepository.completeChallengeWithPhoto(
+                    userId = userId,
+                    questId = questId,
+                    challengeId = challengeId,
+                    photoUrl = photoUrl
+                )
+
+                if (result.isSuccess) {
+                    _uiState.value = QuestUiState.ChallengeCompleted
+                    fetchUserQuests()
+                    fetchQuests()
+                } else {
+                    _uiState.value = QuestUiState.Error(result.exceptionOrNull()?.message ?: "Failed to complete challenge")
+                }
+            } catch (e: Exception) {
+                _uiState.value = QuestUiState.Error(e.message ?: "Failed to complete challenge")
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 }

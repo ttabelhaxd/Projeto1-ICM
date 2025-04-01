@@ -28,6 +28,14 @@ class FirestoreStorageRepository {
         return photoRef.downloadUrl.await().toString()
     }
 
+    suspend fun uploadChallengeUserPhoto(localFilePath: String): String {
+        val originalFile = File(localFilePath)
+        val compressedFile = ImageCompressor.compressImage(originalFile, maxSizeKB = 200)
+        val photoRef = storageRef.child("challenges/user_photos/${UUID.randomUUID()}.jpg")
+        photoRef.putFile(Uri.fromFile(compressedFile)).await()
+        return photoRef.downloadUrl.await().toString()
+    }
+
     suspend fun uploadUserPhoto(localFilePath: String): String {
         val file = File(localFilePath)
         val compressedFile = ImageCompressor.compressImage(file, maxSizeKB = 200)

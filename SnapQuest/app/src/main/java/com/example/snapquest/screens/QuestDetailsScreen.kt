@@ -1,33 +1,18 @@
 package com.example.snapquest.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.snapquest.R
-import com.example.snapquest.ui.components.ChallengeItem
-import com.example.snapquest.ui.components.QuestDetailsSection
+import com.example.snapquest.models.Quest
+import com.example.snapquest.ui.components.*
+import com.example.snapquest.utils.formatDate
 import com.example.snapquest.viewModels.QuestViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +35,7 @@ fun QuestDetailsScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                },
+                }
             )
         }
     ) { paddingValues ->
@@ -60,49 +45,131 @@ fun QuestDetailsScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            quest?.let {
+            quest?.let { currentQuest ->
                 val isQuestComplete = userQuest?.isQuestCompleted ?: false
 
-                if (isQuestComplete) {
-                    Text(
-                        text = "Quest Completed!",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-                QuestDetailsSection(quest = it)
-            }
+                // Seção de status e datas
+                Column(
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    if (isQuestComplete) {
+                        Text(
+                            text = "Quest Completed",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
 
-            Text(
-                text = "Challenges",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
+                    QuestDetailsSection(quest = currentQuest)
 
-            challenges.sortedBy { it.orderInQuest }.forEach { challenge ->
-                val isUnlocked = remember(challenge.id, userQuest) {
-                    val challengeIndex = challenges.indexOf(challenge)
-                    challengeIndex == 0 || (userQuest?.completedChallenges?.contains(challenges[challengeIndex - 1].id) == true)
-                }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                ChallengeItem(
-                    challenge = challenge,
-                    isCompleted = userQuest?.completedChallenges?.contains(challenge.id) ?: false,
-                    isUnlocked = isUnlocked,
-                    onCompleteClick = {
-                        if (isUnlocked) {
-                            user?.uid?.let { userId ->
-                                viewModel.completeChallenge(userId, questId, challenge.id)
-                            }
+                    // Datas formatadas
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "Start Date",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Text(
+                                text = formatDate(currentQuest.startDate),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
-                    },
-                    onClick = {
-                        if (isUnlocked) {
-                            navController.navigate("challengeDetails/${questId}/${challenge.id}")
+                        Column {
+                            Text(
+                                text = "End Date",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Text(
+                                text = formatDate(currentQuest.endDate),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     }
+                }
+
+                // Mapa com a localização
+                if (currentQuest.latitude != 0.0 && currentQuest.longitude != 0.0) {
+                    Text(
+                        text = "Location",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    LocationMap(
+                        latitude = currentQuest.latitude,
+                        longitude = currentQuest.longitude,
+                        markerName = "Quest Location",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .padding(bottom = 16.dp)
+                    )
+                }
+
+                Text(
+                    text = "Challenges",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(vertical = 16.dp)
                 )
+
+                challenges.sortedBy { it.orderInQuest }.forEach { challenge ->
+                    val isUnlocked = remember(challenge.id, userQuest) {
+                        val challengeIndex = challenges.indexOf(challenge)
+                        challengeIndex == 0 || (userQuest?.completedChallenges?.contains(challenges[challengeIndex - 1].id) == true)
+                    }
+
+                    ChallengeItem(
+                        challenge = challenge,
+                        isCompleted = userQuest?.completedChallenges?.contains(challenge.id) ?: false,
+                        isUnlocked = isUnlocked,
+                        onClick = {
+                            if (isUnlocked) {
+                                navController.navigate("challengeDetails/${questId}/${challenge.id}")
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QuestDetailsSection(quest: Quest) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (quest.photoUrl.isNotEmpty()) {
+            QuestImageLoader(
+                imageUrl = quest.photoUrl,
+                contentDescription = "Quest image: ${quest.name}",
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        } else {
+            QuestImageLoader(
+                imageUrl = "",
+                contentDescription = "Default quest image",
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = quest.name,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = quest.description,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

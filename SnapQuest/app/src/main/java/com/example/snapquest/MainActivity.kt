@@ -266,9 +266,6 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                             )
                         }
-                        composable(Screens.Scan.route) {
-
-                        }
                         composable(Screens.Notifications.route) {
                             NotificationsScreen(
                                 modifier = Modifier,

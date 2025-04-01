@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -27,7 +26,6 @@ fun ChallengeItem(
     challenge: Challenge,
     isCompleted: Boolean,
     isUnlocked: Boolean,
-    onCompleteClick: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -118,22 +116,6 @@ fun ChallengeItem(
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
-                }
-            }
-
-            // Botão de completar
-            if (isUnlocked && !isCompleted) {
-                Button(
-                    onClick = onCompleteClick,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(top = 8.dp, end = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text("Mark as Completed")
                 }
             }
         }
