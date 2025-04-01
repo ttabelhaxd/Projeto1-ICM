@@ -171,12 +171,9 @@ class QuestViewModel(
 
     fun getParticipantDetails(participantIds: List<String>): Flow<List<User>> = flow {
         try {
-            Log.d("QuestViewModel", "Fetching ${participantIds.size} participants")
             val users = firestoreUserRepository.getUsersByIds(participantIds)
-            Log.d("QuestViewModel", "Fetched ${users.size} users")
             emit(users)
         } catch (e: Exception) {
-            Log.e("QuestViewModel", "Error fetching participants", e)
             emit(emptyList())
         }
     }

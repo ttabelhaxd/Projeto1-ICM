@@ -1,12 +1,15 @@
 package com.example.snapquest.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -26,6 +29,7 @@ fun QuestDetailsScreen(
     val challenges by viewModel.getQuestChallenges(questId).collectAsState(initial = emptyList())
     val user by viewModel.currentUser.collectAsState()
     val userQuest by viewModel.getUserQuest(user?.uid ?: "", questId).collectAsState(initial = null)
+    val isQuestComplete = userQuest?.completedChallenges?.size == challenges.size
 
     Scaffold(
         topBar = {
@@ -34,6 +38,19 @@ fun QuestDetailsScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = if (isQuestComplete) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surface
+                ),
+                actions = {
+                    if (isQuestComplete) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Completed",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             )
@@ -45,9 +62,31 @@ fun QuestDetailsScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            if (isQuestComplete) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Completed",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Quest Completed!",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             quest?.let { currentQuest ->
-                val isQuestComplete = userQuest?.isQuestCompleted ?: false
-
                 // Seção de status e datas
                 Column(
                     modifier = Modifier.padding(bottom = 16.dp)

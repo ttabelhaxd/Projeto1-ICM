@@ -1,14 +1,21 @@
 package com.example.snapquest.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -17,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.snapquest.models.Quest
@@ -26,6 +34,7 @@ fun QuestCard(
     quest: Quest,
     isCreator: Boolean,
     isJoined: Boolean,
+    isCompleted: Boolean,
     onJoinClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onViewParticipantsClick: () -> Unit,
@@ -33,7 +42,10 @@ fun QuestCard(
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Card(modifier = modifier.padding(8.dp)) {
+    Card(
+        modifier = modifier.padding(8.dp),
+        border = if (isCompleted) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+    ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             if (quest.photoUrl.isNotEmpty()) {
                 QuestImageLoader(
@@ -47,8 +59,27 @@ fun QuestCard(
                 )
             }
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(quest.name, style = MaterialTheme.typography.headlineSmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(quest.name, style = MaterialTheme.typography.headlineSmall)
+                    if (isCompleted) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Completed",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
                 Text(quest.description, modifier = Modifier.padding(vertical = 8.dp))
+
+                if (isCompleted) {
+                    Text(
+                        text = "Quest completed!",
+                        style = MaterialTheme.typography.labelLarge.copy(color = MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
 
                 if (isCreator) {
                     Row(

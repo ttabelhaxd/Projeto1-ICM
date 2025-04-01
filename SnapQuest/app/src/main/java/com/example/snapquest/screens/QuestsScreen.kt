@@ -89,6 +89,7 @@ fun QuestsScreen(
                     quest = quest,
                     isCreator = quest.creatorId == user?.uid,
                     isJoined = joinedQuestIds.contains(quest.id),
+                    isCompleted = userQuests.find { it.questId == quest.id }?.completedChallenges?.size == quest.totalChallenges,
                     onJoinClick = {
                         if (user?.uid != null) {
                             viewModel.joinQuest(user!!.uid, quest.id)
