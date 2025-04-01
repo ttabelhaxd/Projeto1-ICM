@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.input.InputTransformation.Companion.keyb
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +50,7 @@ import com.example.snapquest.ui.components.CustomDatePicker
 import com.example.snapquest.ui.components.LocationPickerDialog
 import com.example.snapquest.ui.components.LocationSelector
 import com.example.snapquest.ui.components.PhotoUploader
+import com.example.snapquest.utils.ImagePickerUtils
 import com.example.snapquest.viewModels.QuestUiState
 import com.example.snapquest.viewModels.QuestViewModel
 import com.google.android.gms.maps.model.LatLng
@@ -74,6 +77,7 @@ fun CreateQuestScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    var isLoading by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     var showQuestLocationPicker by remember { mutableStateOf(false) }
@@ -414,6 +418,7 @@ fun CreateQuestScreen(
                 onClick = {
                     coroutineScope.launch {
                         if (validateQuestForm(questName, questChallenges, questLatitude, questLongitude)) {
+                            isLoading = true
                             try{
                                 val photoUrl = if (questPhotoPath.isNotEmpty()) {
                                     viewModel.uploadQuestPhoto(questPhotoPath)
@@ -446,6 +451,9 @@ fun CreateQuestScreen(
 
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                isLoading = false
+                                navController.popBackStack()
                             }
                         } else {
                             Toast.makeText(
@@ -459,7 +467,7 @@ fun CreateQuestScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = uiState != QuestUiState.Loading
             ) {
-                if (uiState == QuestUiState.Loading) {
+                if (uiState == QuestUiState.Loading || isLoading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Text("Create Quest")

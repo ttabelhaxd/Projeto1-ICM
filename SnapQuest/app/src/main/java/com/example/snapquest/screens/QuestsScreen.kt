@@ -43,6 +43,11 @@ fun QuestsScreen(
         userQuests.map { it.questId }.toSet()
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.fetchQuests()
+        viewModel.fetchUserQuests()
+    }
+
     LaunchedEffect(uiState) {
         when (uiState) {
             is QuestUiState.QuestJoined -> {
