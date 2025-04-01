@@ -16,4 +16,7 @@ sealed class Screens(val route: String) {
     object ChallengeDetails : Screens("challengeDetails/{questId}/{challengeId}") {
         fun createRoute(questId: String, challengeId: String) = "challengeDetails/$questId/$challengeId"
     }
+    object Participants : Screens("participants/{questId}") {
+        fun createRoute(questId: String) = "participants/$questId"
+    }
 }

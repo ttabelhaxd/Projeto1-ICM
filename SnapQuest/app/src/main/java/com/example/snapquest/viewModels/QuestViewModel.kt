@@ -1,5 +1,6 @@
 package com.example.snapquest.viewModels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -175,6 +176,18 @@ class QuestViewModel(
 
     suspend fun uploadChallengePhoto(localPath: String): String {
         return storageRepository.uploadChallengePhoto(localPath)
+    }
+
+    fun getParticipantDetails(participantIds: List<String>): Flow<List<User>> = flow {
+        try {
+            Log.d("QuestViewModel", "Fetching ${participantIds.size} participants")
+            val users = firestoreUserRepository.getUsersByIds(participantIds)
+            Log.d("QuestViewModel", "Fetched ${users.size} users")
+            emit(users)
+        } catch (e: Exception) {
+            Log.e("QuestViewModel", "Error fetching participants", e)
+            emit(emptyList())
+        }
     }
 }
 

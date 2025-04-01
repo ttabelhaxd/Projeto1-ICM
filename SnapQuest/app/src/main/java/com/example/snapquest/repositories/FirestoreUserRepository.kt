@@ -2,13 +2,16 @@ package com.example.snapquest.repositories
 
 import android.util.Log
 import com.example.snapquest.models.User
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -98,6 +101,35 @@ class FirestoreUserRepository @Inject constructor() {
         } catch (e: Exception) {
             Log.e("FirestoreUserRepo", "Error deleting user", e)
             Result.failure(e)
+        }
+    }
+
+    suspend fun getUsersByIds(userIds: List<String>): List<User> {
+        return try {
+            if (userIds.isEmpty()) return emptyList()
+
+            userIds.chunked(10).flatMap { chunk ->
+                usersRef
+                    .whereIn(FieldPath.documentId(), chunk)
+                    .get()
+                    .await()
+                    .documents
+                    .mapNotNull { doc ->
+                        doc.toObject(User::class.java)?.copy(
+                            uid = doc.id,
+                            name = doc.getString("name") ?: "",
+                            email = doc.getString("email") ?: "",
+                            photoUrl = doc.getString("photoUrl") ?: ""
+                        ).also {
+                            if (it != null) {
+                                Log.d("FirestoreUserRepo", "Loaded user: ${it.uid}")
+                            }
+                        }
+                    }
+            }
+        } catch (e: Exception) {
+            Log.e("FirestoreUserRepo", "Error fetching users by IDs: ${e.message}")
+            emptyList()
         }
     }
 

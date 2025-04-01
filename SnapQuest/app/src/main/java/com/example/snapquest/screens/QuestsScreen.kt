@@ -97,6 +97,9 @@ fun QuestsScreen(
                     onDeleteClick = {
                         viewModel.deleteQuest(quest.id)
                     },
+                    onViewParticipantsClick = {
+                        navController.navigate("participants/${quest.id}")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {

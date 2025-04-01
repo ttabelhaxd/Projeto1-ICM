@@ -31,6 +31,7 @@ import com.example.snapquest.screens.EditProfileScreen
 import com.example.snapquest.screens.HomeScreen
 import com.example.snapquest.screens.NotificationsScreen
 import com.example.snapquest.screens.QuestDetailsScreen
+import com.example.snapquest.screens.QuestParticipantsScreen
 import com.example.snapquest.screens.QuestsScreen
 import com.example.snapquest.screens.SettingsScreen
 import com.example.snapquest.screens.SignInScreen
@@ -223,6 +224,22 @@ class MainActivity : ComponentActivity() {
                                 questId = questId,
                                 navController = navController,
                                 viewModel = questViewModel
+                            )
+                        }
+
+                        composable(Screens.Participants.route) { backStackEntry ->
+                            val questId = backStackEntry.arguments?.getString("questId") ?: ""
+                            val viewModel = viewModel<QuestViewModel>(
+                                factory = QuestViewModelFactory(
+                                    (application as SnapQuestApp).userRepository,
+                                    (application as SnapQuestApp).questRepository,
+                                    (application as SnapQuestApp).storageRepository
+                                )
+                            )
+                            QuestParticipantsScreen(
+                                questId = questId,
+                                navController = navController,
+                                viewModel = viewModel
                             )
                         }
 

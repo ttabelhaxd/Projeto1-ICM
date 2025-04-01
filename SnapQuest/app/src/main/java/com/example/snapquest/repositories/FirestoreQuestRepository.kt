@@ -6,6 +6,7 @@ import com.example.snapquest.models.Quest
 import com.example.snapquest.models.UserQuest
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -60,7 +61,9 @@ class FirestoreQuestRepository {
 
     suspend fun joinQuest(userId: String, questId: String): Result<Unit> {
         return try {
-            val quest = questsRef.document(questId).get().await()
+            val questRef = questsRef.document(questId)
+            val quest = questRef.get().await()
+
             if (!quest.exists()) {
                 return Result.failure(IllegalStateException("Quest not found"))
             }
@@ -76,18 +79,18 @@ class FirestoreQuestRepository {
                 )
             ).await()
 
-            try {
-                questsRef.document(questId).update("participants", FieldValue.arrayUnion(userId)).await()
-            } catch (e: Exception) {
-                Log.w("JoinQuest", "Couldn't update participants list", e)
-            }
+            val updateData = hashMapOf<String, Any>(
+                "participants" to FieldValue.arrayUnion(userId)
+            )
+
+            questRef.set(updateData, SetOptions.merge()).await()
 
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("FirestoreQuestRepo", "Error joining quest", e)
             Result.failure(e)
         }
     }
-
     fun getUserQuests(userId: String): Flow<Result<List<UserQuest>>> = flow {
         try {
             val snapshot = db.collection("userQuests")
@@ -138,8 +141,15 @@ class FirestoreQuestRepository {
     fun getQuestById(questId: String): Flow<Result<Quest?>> = flow {
         try {
             val snapshot = questsRef.document(questId).get().await()
-            emit(Result.success(snapshot.toObject<Quest>()?.copy(id = snapshot.id)))
+            val participants = snapshot.get("participants") as? List<String> ?: emptyList()
+            Log.d("FirestoreQuestRepo", "Found ${participants.size} participants for quest $questId")
+
+            emit(Result.success(snapshot.toObject<Quest>()?.copy(
+                id = snapshot.id,
+                participants = participants
+            )))
         } catch (e: Exception) {
+            Log.e("FirestoreQuestRepo", "Error getting quest", e)
             emit(Result.failure(e))
         }
     }
