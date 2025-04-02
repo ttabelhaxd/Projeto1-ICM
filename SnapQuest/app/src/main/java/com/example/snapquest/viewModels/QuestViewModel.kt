@@ -189,7 +189,7 @@ class QuestViewModel(
             _uiState.value = QuestUiState.Loading
 
             try {
-                val photoUrl = storageRepository.uploadChallengePhoto(photoPath)
+                val photoUrl = storageRepository.uploadChallengeUserPhoto(photoPath)
                 val result = questRepository.completeChallengeWithPhoto(
                     userId = userId,
                     questId = questId,

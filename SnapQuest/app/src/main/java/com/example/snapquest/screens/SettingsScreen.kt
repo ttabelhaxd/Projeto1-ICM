@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +47,10 @@ fun SettingsScreen(
     viewModel: HomeViewModel,
     onEditProfile: () -> Unit
 ) {
+    val currentUser = viewModel.currentUser.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.refreshUserData()
+    }
     Scaffold(
         bottomBar = {
             Navbar(modifier = Modifier, navController = navController)
@@ -58,7 +64,7 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val userPhotoUrl = viewModel.currentUser.value?.photoUrl ?: ""
+            val userPhotoUrl = currentUser.value?.photoUrl ?: ""
             val placeholder = painterResource(id = R.drawable.ic_profile_placeholder)
 
             TitleMessage(modifier = modifier, text1 = "", text2 = "Settings")
@@ -82,7 +88,7 @@ fun SettingsScreen(
             )
 
             Text(
-                text = viewModel.currentUser.value?.name ?: "User",
+                text = currentUser.value?.name ?: "User",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 16.dp)

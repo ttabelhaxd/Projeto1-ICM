@@ -70,6 +70,10 @@ fun EditProfileScreen(
     var email by remember { mutableStateOf(user?.email ?: "") }
     var profileImageUrl by remember { mutableStateOf(user?.photoUrl ?: "") }
 
+    val isNameChanged = name != user?.name
+    val isEmailChanged = email != user?.email
+    val isPhotoChanged = profileImageUrl != user?.photoUrl && profileImageUrl.isNotBlank()
+
     val imagePicker = ImagePickerUtils.rememberImagePicker(
         onImageSelected = { path ->
             profileImageUrl = path
@@ -87,14 +91,16 @@ fun EditProfileScreen(
             try {
                 var newPhotoUrl = user?.photoUrl ?: ""
 
-                profileImageUrl.let { path ->
-                    user?.photoUrl?.let { oldUrl ->
-                        if (oldUrl.isNotBlank()) {
-                            storageRepository.deleteUserPhoto(oldUrl)
-                        }
+                if (profileImageUrl != user?.photoUrl && profileImageUrl.isNotBlank()) {
+                    user?.photoUrl?.takeIf { it.isNotBlank() }?.let { oldUrl ->
+                        storageRepository.deleteUserPhoto(oldUrl)
                     }
 
-                    newPhotoUrl = storageRepository.uploadUserPhoto(path)
+                    newPhotoUrl = if (profileImageUrl.startsWith("http").not()) {
+                        storageRepository.uploadUserPhoto(profileImageUrl)
+                    } else {
+                        profileImageUrl
+                    }
                 }
 
                 viewModel.updateUserProfile(
@@ -103,13 +109,12 @@ fun EditProfileScreen(
                     photoUrl = newPhotoUrl
                 )
 
-                navController.popBackStack()
-
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
                 Log.e("EditProfile", "Error updating profile", e)
             } finally {
                 isLoading = false
+                navController.popBackStack()
             }
         }
     }
@@ -227,14 +232,12 @@ fun EditProfileScreen(
 
             Button(
                 onClick = {
-                    if (name.isNotBlank()) {
-                        onSaveProfile()
-                    }
+                    onSaveProfile()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = name.isNotBlank() && !isLoading
+                enabled = (isNameChanged || isEmailChanged || isPhotoChanged) && !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
