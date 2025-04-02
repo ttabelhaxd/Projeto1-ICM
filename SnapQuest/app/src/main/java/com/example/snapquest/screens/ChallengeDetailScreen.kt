@@ -3,20 +3,22 @@ package com.example.snapquest.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
@@ -57,6 +59,8 @@ fun ChallengeDetailsScreen(
     val isCompleted = userQuest?.completedChallenges?.contains(challengeId) ?: false
     val canComplete = user != null && !isCompleted
     val isLoading by viewModel.isLoading.collectAsState()
+    var showImageDialog by remember { mutableStateOf(false) }
+    var showUserImageDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -195,6 +199,39 @@ fun ChallengeDetailsScreen(
                         )
                     }
 
+                    if (showImageDialog) {
+                        Dialog(
+                            onDismissRequest = { showImageDialog = false }
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(500.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.TopEnd
+                                ) {
+                                    QuestImageLoader(
+                                        imageUrl = ch.hintPhotoUrl,
+                                        contentDescription = "Fullscreen challenge hint image",
+                                        modifier = Modifier.fillMaxWidth().height(500.dp)
+                                    )
+
+                                    IconButton(
+                                        onClick = { showImageDialog = false },
+                                        modifier = Modifier.padding(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Close"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Foto de dica (se existir)
                     if (ch.hintPhotoUrl.isNotEmpty()) {
                         Text(
@@ -202,25 +239,71 @@ fun ChallengeDetailsScreen(
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        QuestImageLoader(
-                            imageUrl = ch.hintPhotoUrl,
-                            contentDescription = "Challenge hint image",
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .padding(bottom = 8.dp)
+                                .clickable { showImageDialog = true }
+                        ){
+                            QuestImageLoader(
+                                imageUrl = ch.hintPhotoUrl,
+                                contentDescription = "Challenge hint image",
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
                     }
 
-                    // Foto tirada pelo usuário (se completado)
+                    // Foto tirada pelo utilizador (se completado)
                     if (isCompleted && userPhotoUrl != null) {
+                        if (showUserImageDialog) {
+                            Dialog(
+                                onDismissRequest = { showUserImageDialog = false }
+                            ) {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(500.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.TopEnd
+                                    ) {
+                                        QuestImageLoader(
+                                            imageUrl = userPhotoUrl,
+                                            contentDescription = "Fullscreen User image",
+                                            modifier = Modifier.fillMaxWidth().height(500.dp)
+                                        )
+
+                                        IconButton(
+                                            onClick = { showUserImageDialog = false },
+                                            modifier = Modifier.padding(8.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Close"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         Text(
                             text = "Your Photo:",
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        QuestImageLoader(
-                            imageUrl = userPhotoUrl,
-                            contentDescription = "User completed challenge photo",
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showUserImageDialog = true }
+                        ){
+                            QuestImageLoader(
+                                imageUrl = userPhotoUrl,
+                                contentDescription = "User completed challenge photo",
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        }
                     }
 
                     // Botão para completar

@@ -1,19 +1,21 @@
 package com.example.snapquest.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
-import com.example.snapquest.models.Quest
 import com.example.snapquest.ui.components.*
 import com.example.snapquest.utils.formatDate
 import com.example.snapquest.viewModels.QuestViewModel
@@ -30,6 +32,7 @@ fun QuestDetailsScreen(
     val user by viewModel.currentUser.collectAsState()
     val userQuest by viewModel.getUserQuest(user?.uid ?: "", questId).collectAsState(initial = null)
     val isQuestComplete = userQuest?.completedChallenges?.size == challenges.size
+    var showImageDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -87,20 +90,79 @@ fun QuestDetailsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
             quest?.let { currentQuest ->
-                // Seção de status e datas
                 Column(
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    if (isQuestComplete) {
-                        Text(
-                            text = "Quest Completed",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
+                    if (showImageDialog) {
+                        Dialog(
+                            onDismissRequest = { showImageDialog = false }
+                        ) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().height(500.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.TopEnd
+                                ) {
+                                    QuestImageLoader(
+                                        imageUrl = currentQuest.photoUrl,
+                                        contentDescription = "Fullscreen quest image",
+                                        modifier = Modifier.fillMaxWidth().height(500.dp)
+                                    )
 
-                    QuestDetailsSection(quest = currentQuest)
+                                    IconButton(
+                                        onClick = { showImageDialog = false },
+                                        modifier = Modifier.padding(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Close"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (currentQuest.photoUrl.isNotEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .padding(bottom = 8.dp)
+                                    .clickable { showImageDialog = true }
+                            ) {
+                                QuestImageLoader(
+                                    imageUrl = currentQuest.photoUrl,
+                                    contentDescription = "Quest image: ${currentQuest.name}",
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+                        } else {
+                            QuestImageLoader(
+                                imageUrl = "",
+                                contentDescription = "Default quest image",
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = currentQuest.name,
+                                    style = MaterialTheme.typography.headlineSmall
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = currentQuest.description,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -173,42 +235,6 @@ fun QuestDetailsScreen(
                         }
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun QuestDetailsSection(quest: Quest) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        if (quest.photoUrl.isNotEmpty()) {
-            QuestImageLoader(
-                imageUrl = quest.photoUrl,
-                contentDescription = "Quest image: ${quest.name}",
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        } else {
-            QuestImageLoader(
-                imageUrl = "",
-                contentDescription = "Default quest image",
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = quest.name,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = quest.description,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
