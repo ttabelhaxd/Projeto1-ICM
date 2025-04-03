@@ -69,7 +69,7 @@ fun QuestsScreen(
                 Icon(Icons.Default.Add, contentDescription = "Create Quest")
             }
         },
-        bottomBar = { Navbar(modifier = Modifier, navController = navController) }
+        bottomBar = { Navbar(modifier = Modifier, navController = navController) },
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
