@@ -69,7 +69,7 @@ fun QuestDetailsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .background(MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium)
                         .padding(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -239,6 +239,8 @@ fun QuestDetailsScreen(
                             }
                         }
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.outlined.LocationSearching
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -150,15 +151,19 @@ fun HomeScreen(
                                 )
 
                                 val completed = quest.completedChallenges.size
-                                val total =
-                                    questViewModel.quests.value.firstOrNull { it.id == quest.questId }?.participants?.size
+                                val totalChallenges =
+                                    questViewModel.quests.value.firstOrNull { it.id == quest.questId }?.totalChallenges
                                         ?: 0
 
-                                if (total > 0) {
+                                if (totalChallenges > 0) {
                                     Text(
-                                        text = "Progress: $completed/$total challenges",
+                                        text = "Progress: $completed/$totalChallenges challenges",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.primary
+                                    )
+                                    LinearProgressIndicator(
+                                        progress = { completed.toFloat() / totalChallenges.toFloat() },
+                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                                     )
                                 }
                             }
