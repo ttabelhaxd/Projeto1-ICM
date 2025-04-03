@@ -44,19 +44,61 @@ class FirestoreQuestRepository {
         }
     }
 
-    suspend fun deleteQuest(questId: String) {
-        val challenges = getQuestChallenges(questId)
+    suspend fun deleteQuest(questId: String, storageRepository: FirestoreStorageRepository) {
         val batch = db.batch()
 
-        challenges.forEach { challenge ->
-            val ref = questsRef.document(questId)
-                .collection("challenges")
-                .document(challenge.id)
-            batch.delete(ref)
-        }
+        try {
+            val challenges = getQuestChallenges(questId)
+            val userQuests = getUserQuestsForQuest(questId)
+            val quest = questsRef.document(questId).get().await().toObject<Quest>()
 
-        batch.delete(questsRef.document(questId))
-        batch.commit().await()
+            challenges.forEach { challenge ->
+                val challengeRef = questsRef.document(questId)
+                    .collection("challenges")
+                    .document(challenge.id)
+                batch.delete(challengeRef)
+            }
+
+            userQuests.forEach { userQuest ->
+                val userQuestRef = db.collection("userQuests").document("${userQuest.userId}_$questId")
+                batch.delete(userQuestRef)
+            }
+
+            batch.delete(questsRef.document(questId))
+            batch.commit().await()
+
+            val photoUrls = mutableListOf<String>()
+
+            quest?.photoUrl?.let { photoUrls.add(it) }
+            challenges.map { it.hintPhotoUrl }.let { photoUrls.addAll(it) }
+
+            val userPhotoUrls = userQuests
+                .flatMap { it.completedPhotos.values ?: emptyList() }
+                .filter { it.isNotBlank() }
+
+            photoUrls.addAll(userPhotoUrls)
+
+            if (photoUrls.isNotEmpty()) {
+                storageRepository.deletePhotosByUrls(photoUrls)
+            }
+
+        } catch (e: Exception) {
+            Log.e("FirestoreQuestRepo", "Error deleting quest", e)
+            throw e
+        }
+    }
+
+    private suspend fun getUserQuestsForQuest(questId: String): List<UserQuest> {
+        return try {
+            val snapshot = db.collection("userQuests")
+                .whereEqualTo("questId", questId)
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull { it.toObject<UserQuest>() }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     suspend fun joinQuest(userId: String, questId: String): Result<Unit> {

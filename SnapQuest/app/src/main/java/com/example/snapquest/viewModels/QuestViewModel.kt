@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -101,7 +100,7 @@ class QuestViewModel(
         viewModelScope.launch {
             _uiState.value = QuestUiState.Loading
             try {
-                questRepository.deleteQuest(questId)
+                questRepository.deleteQuest(questId, storageRepository)
                 fetchQuests()
                 _uiState.value = QuestUiState.QuestDeleted
             } catch (e: Exception) {

@@ -54,4 +54,17 @@ class FirestoreStorageRepository {
             Log.e("StorageRepo", "Error deleting photo", e)
         }
     }
+
+    suspend fun deletePhotosByUrls(urls: List<String>) {
+        try {
+            urls.forEach { url ->
+                if (url.isNotBlank()) {
+                    val photoRef = storage.getReferenceFromUrl(url)
+                    photoRef.delete().await()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("StorageRepo", "Error deleting photos", e)
+        }
+    }
 }

@@ -131,7 +131,7 @@ fun HomeScreen(
                                 modifier = Modifier.padding(16.dp)
                             ) {
                                 Text(
-                                    text = "Continue Your Quest",
+                                    text = "Continue Your Last Quest",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
