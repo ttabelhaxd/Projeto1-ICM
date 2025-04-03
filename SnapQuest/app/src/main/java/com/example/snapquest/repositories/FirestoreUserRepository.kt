@@ -235,4 +235,25 @@ class FirestoreUserRepository @Inject constructor() {
             Log.e("FirestoreUserRepo", "Error marking notification as read", e)
         }
     }
+
+    suspend fun clearAllNotifications(userId: String): Result<Unit> {
+        return try {
+            val notifications = usersRef
+                .document(userId)
+                .collection("notifications")
+                .get()
+                .await()
+
+            val batch = db.batch()
+            notifications.documents.forEach { doc ->
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirestoreUserRepo", "Error clearing notifications", e)
+            Result.failure(e)
+        }
+    }
 }

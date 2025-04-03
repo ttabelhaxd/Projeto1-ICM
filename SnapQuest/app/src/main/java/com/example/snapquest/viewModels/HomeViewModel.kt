@@ -22,6 +22,9 @@ class HomeViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications = _notifications.asStateFlow()
 
@@ -91,6 +94,20 @@ class HomeViewModel(
     fun markNotificationAsRead(userId: String, notificationId: String) {
         viewModelScope.launch {
             firestoreUserRepository.markNotificationAsRead(userId, notificationId)
+        }
+    }
+
+    fun clearNotifications(userId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                firestoreUserRepository.clearAllNotifications(userId).getOrThrow()
+                fetchNotifications(userId) // Atualiza a lista após limpar
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error clearing notifications", e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 }
