@@ -4,11 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.snapquest.models.Notification
 import com.example.snapquest.models.User
 import com.example.snapquest.repositories.FirestoreUserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
@@ -19,6 +21,9 @@ class HomeViewModel(
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
+    val notifications = _notifications.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -68,6 +73,24 @@ class HomeViewModel(
             } finally {
                 _isRefreshing.value = false
             }
+        }
+    }
+
+    fun fetchNotifications(userId: String) {
+        viewModelScope.launch {
+            firestoreUserRepository.getNotifications(userId)
+                .catch { e ->
+                    Log.e("HomeViewModel", "Error fetching notifications", e)
+                }
+                .collect { notifications ->
+                    _notifications.value = notifications
+                }
+        }
+    }
+
+    fun markNotificationAsRead(userId: String, notificationId: String) {
+        viewModelScope.launch {
+            firestoreUserRepository.markNotificationAsRead(userId, notificationId)
         }
     }
 }

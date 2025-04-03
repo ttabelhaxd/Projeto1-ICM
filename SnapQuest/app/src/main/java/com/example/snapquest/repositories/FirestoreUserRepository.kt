@@ -1,18 +1,23 @@
 package com.example.snapquest.repositories
 
 import android.util.Log
+import com.example.snapquest.models.Notification
 import com.example.snapquest.models.User
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -151,5 +156,83 @@ class FirestoreUserRepository @Inject constructor() {
 
     fun resetCurrentUser() {
         _currentUser.value = null
+    }
+
+    suspend fun addNotification(
+        userId: String,
+        title: String,
+        message: String,
+        type: String,
+        relatedId: String
+    ) {
+        try {
+            val notificationData = hashMapOf(
+                "title" to title,
+                "message" to message,
+                "timestamp" to FieldValue.serverTimestamp(),
+                "read" to false,
+                "type" to type,
+                "relatedId" to relatedId
+            )
+
+            usersRef
+                .document(userId)
+                .collection("notifications")
+                .add(notificationData)
+                .await()
+        } catch (e: Exception) {
+            Log.e("FirestoreUserRepo", "Error adding notification", e)
+        }
+    }
+
+    fun getNotifications(userId: String): Flow<List<Notification>> = callbackFlow {
+        val listener = usersRef
+            .document(userId)
+            .collection("notifications")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("Firestore", "Listen error", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
+
+                val notifications = snapshot?.documents?.mapNotNull { doc ->
+                    try {
+                        Notification(
+                            id = doc.id,
+                            title = doc.getString("title") ?: "",
+                            message = doc.getString("message") ?: "",
+                            timestamp = doc.getDate("timestamp") ?: Date(),
+                            read = doc.getBoolean("read") ?: false,
+                            type = doc.getString("type") ?: "",
+                            relatedId = doc.getString("relatedId") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        Log.e("Firestore", "Error parsing doc ${doc.id}", e)
+                        null
+                    }
+                } ?: emptyList()
+
+                trySend(notifications).isSuccess
+            }
+
+        awaitClose { listener.remove() }
+    }.catch { e ->
+        Log.e("Firestore", "Flow error", e)
+        emit(emptyList())
+    }
+
+    suspend fun markNotificationAsRead(userId: String, notificationId: String) {
+        try {
+            usersRef
+                .document(userId)
+                .collection("notifications")
+                .document(notificationId)
+                .update("read", true)
+                .await()
+        } catch (e: Exception) {
+            Log.e("FirestoreUserRepo", "Error marking notification as read", e)
+        }
     }
 }

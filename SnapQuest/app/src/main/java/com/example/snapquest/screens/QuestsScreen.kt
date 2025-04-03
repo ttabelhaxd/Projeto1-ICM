@@ -79,7 +79,7 @@ fun QuestsScreen(
             item {
                 Text(
                     text = "Available Quests",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(16.dp)
                 )
             }

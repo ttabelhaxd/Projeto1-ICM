@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import coil3.Uri
 import com.example.snapquest.models.Challenge
 import com.example.snapquest.models.Quest
 import com.example.snapquest.models.User
@@ -12,14 +11,16 @@ import com.example.snapquest.models.UserQuest
 import com.example.snapquest.repositories.FirestoreQuestRepository
 import com.example.snapquest.repositories.FirestoreStorageRepository
 import com.example.snapquest.repositories.FirestoreUserRepository
-import com.google.firestore.v1.FirestoreGrpc.FirestoreStub
+import com.example.snapquest.services.NotificationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class QuestUiState {
     object Idle : QuestUiState()
@@ -27,6 +28,7 @@ sealed class QuestUiState {
     object Success : QuestUiState()
     object QuestCreated : QuestUiState()
     object QuestDeleted : QuestUiState()
+    object QuestCompleted : QuestUiState()
     object ChallengeCompleted : QuestUiState()
     data class QuestJoined(val questId: String) : QuestUiState()
     data class Error(val message: String) : QuestUiState()
@@ -35,7 +37,8 @@ sealed class QuestUiState {
 class QuestViewModel(
     private val firestoreUserRepository: FirestoreUserRepository,
     private val questRepository: FirestoreQuestRepository,
-    private val storageRepository: FirestoreStorageRepository
+    private val storageRepository: FirestoreStorageRepository,
+    private val notificationService: NotificationService
 ) : ViewModel() {
     private val _quests = MutableStateFlow<List<Quest>>(emptyList())
     val quests: StateFlow<List<Quest>> = _quests
@@ -56,10 +59,12 @@ class QuestViewModel(
         viewModelScope.launch {
             firestoreUserRepository.currentUser.collect { user ->
                 _currentUser.value = user
+                if (user != null) {
+                    fetchUserQuests()
+                }
             }
         }
         fetchQuests()
-        fetchUserQuests()
     }
 
     fun fetchQuests() {
@@ -123,6 +128,19 @@ class QuestViewModel(
             try {
                 questRepository.joinQuest(userId, questId)
                 fetchUserQuests()
+
+                val quest = _quests.value.find { it.id == questId }
+                quest?.let {
+                    notificationService.showQuestJoinedNotification(it.name)
+                }
+                firestoreUserRepository.addNotification(
+                    userId = userId,
+                    title = "Quest Joined!",
+                    message = "You've successfully joined ${quest?.name}",
+                    type = "quest_joined",
+                    relatedId = questId
+                )
+
                 _uiState.value = QuestUiState.QuestJoined(questId)
             } catch (e: Exception) {
                 _uiState.value = QuestUiState.Error(e.message ?: "Failed to join quest")
@@ -185,30 +203,73 @@ class QuestViewModel(
         photoPath: String
     ) {
         viewModelScope.launch {
-            _isLoading.value = true
             _uiState.value = QuestUiState.Loading
-
             try {
-                val photoUrl = storageRepository.uploadChallengeUserPhoto(photoPath)
-                val result = questRepository.completeChallengeWithPhoto(
+                val photoUrl = withContext(Dispatchers.IO) {
+                    storageRepository.uploadChallengeUserPhoto(photoPath)
+                }
+
+                questRepository.completeChallengeWithPhoto(
                     userId = userId,
                     questId = questId,
                     challengeId = challengeId,
                     photoUrl = photoUrl
+                ).getOrThrow()
+
+                fetchUserQuests()
+                fetchQuests()
+
+                val challenge = questRepository.getChallengeById(questId, challengeId)
+                if (challenge != null) {
+                    notificationService.showChallengeCompletedNotification(challenge.name)
+
+                    try {
+                        firestoreUserRepository.addNotification(
+                            userId = userId,
+                            title = "Challenge Completed!",
+                            message = "You completed: ${challenge.name}",
+                            type = "challenge_completed",
+                            relatedId = questId + "_" + challengeId
+                        )
+                        Log.d("Notifications", "Notification added for challenge")
+                    } catch (e: Exception) {
+                        Log.e("Notifications", "Failed to add notification", e)
+                    }
+                }
+
+                checkQuestCompletion(userId, questId)
+
+                _uiState.value = QuestUiState.ChallengeCompleted
+            } catch (e: Exception) {
+                Log.e("QuestViewModel", "Error completing challenge", e)
+                _uiState.value = QuestUiState.Error(e.message ?: "Failed to complete challenge")
+            }
+        }
+    }
+
+    private suspend fun checkQuestCompletion(userId: String, questId: String) {
+        try {
+            fetchUserQuests()
+            val userQuest = userQuests.value.firstOrNull { it.questId == questId }
+            val quest = quests.value.firstOrNull { it.id == questId }
+
+            if (userQuest != null && quest != null &&
+                userQuest.completedChallenges.size >= quest.totalChallenges) {
+                notificationService.showQuestCompletedNotification(quest.name)
+
+                firestoreUserRepository.addNotification(
+                    userId = userId,
+                    title = "Quest Completed! 🏆",
+                    message = "Congratulations! You completed ${quest.name}",
+                    type = "quest_completed",
+                    relatedId = questId
                 )
 
-                if (result.isSuccess) {
-                    _uiState.value = QuestUiState.ChallengeCompleted
-                    fetchUserQuests()
-                    fetchQuests()
-                } else {
-                    _uiState.value = QuestUiState.Error(result.exceptionOrNull()?.message ?: "Failed to complete challenge")
-                }
-            } catch (e: Exception) {
-                _uiState.value = QuestUiState.Error(e.message ?: "Failed to complete challenge")
-            } finally {
-                _isLoading.value = false
+                _uiState.value = QuestUiState.QuestCompleted
+                Log.d("Notifications", "Quest completion notification sent")
             }
+        } catch (e: Exception) {
+            Log.e("Notifications", "Error checking quest completion", e)
         }
     }
 }
@@ -216,11 +277,12 @@ class QuestViewModel(
 class QuestViewModelFactory(
     private val firestoreUserRepository: FirestoreUserRepository,
     private val firestoreQuestRepository: FirestoreQuestRepository,
-    private val firestoreStorageRepository: FirestoreStorageRepository
+    private val firestoreStorageRepository: FirestoreStorageRepository,
+    private val notificationService: NotificationService
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(QuestViewModel::class.java)) {
-            return QuestViewModel(firestoreUserRepository, firestoreQuestRepository, firestoreStorageRepository) as T
+            return QuestViewModel(firestoreUserRepository, firestoreQuestRepository, firestoreStorageRepository, notificationService) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

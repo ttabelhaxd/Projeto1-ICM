@@ -1,8 +1,6 @@
 package com.example.snapquest.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationSearching
 import androidx.compose.material.icons.filled.Notifications
@@ -52,13 +50,6 @@ fun Navbar(
             unselectedIcon = Icons.Outlined.LocationSearching,
             hasNews = false,
             route = Screens.Quests.route
-        ),
-        NavItem(
-            label = "Daily",
-            selectedIcon = Icons.AutoMirrored.Filled.ReceiptLong,
-            unselectedIcon = Icons.AutoMirrored.Outlined.ReceiptLong,
-            hasNews = false,
-            route = Screens.DailyQuest.route
         ),
 
         NavItem(

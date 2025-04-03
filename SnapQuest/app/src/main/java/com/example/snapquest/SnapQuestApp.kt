@@ -1,6 +1,11 @@
 package com.example.snapquest
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.snapquest.manages.LocationManager
 import com.example.snapquest.repositories.FirestoreQuestRepository
 import com.example.snapquest.repositories.FirestoreStorageRepository
@@ -15,6 +20,11 @@ class SnapQuestApp : Application() {
     val questRepository by lazy { FirestoreQuestRepository() }
     val storageRepository by lazy { FirestoreStorageRepository() }
 
+    companion object {
+        const val CHANNEL_ID = "snapquest_channel_id"
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
@@ -25,5 +35,14 @@ class SnapQuestApp : Application() {
             isPersistenceEnabled = true
         }
         db.firestoreSettings = settings
+
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "SnapQuest Notifications",
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 }

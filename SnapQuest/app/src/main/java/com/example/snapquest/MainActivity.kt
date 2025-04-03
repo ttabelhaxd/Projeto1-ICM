@@ -1,5 +1,6 @@
 package com.example.snapquest
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -26,7 +27,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.snapquest.navigation.Screens
 import com.example.snapquest.screens.ChallengeDetailsScreen
 import com.example.snapquest.screens.CreateQuestScreen
-import com.example.snapquest.screens.DailyQuestScreen
 import com.example.snapquest.screens.EditProfileScreen
 import com.example.snapquest.screens.HomeScreen
 import com.example.snapquest.screens.NotificationsScreen
@@ -35,19 +35,20 @@ import com.example.snapquest.screens.QuestParticipantsScreen
 import com.example.snapquest.screens.QuestsScreen
 import com.example.snapquest.screens.SettingsScreen
 import com.example.snapquest.screens.SignInScreen
+import com.example.snapquest.services.NotificationService
 import com.example.snapquest.signin.GoogleAuthUiClient
 import com.example.snapquest.ui.theme.SnapQuestTheme
 import com.example.snapquest.viewModels.HomeViewModel
 import com.example.snapquest.viewModels.HomeViewModelFactory
 import com.example.snapquest.viewModels.QuestViewModel
 import com.example.snapquest.viewModels.QuestViewModelFactory
-import com.google.android.gms.auth.api.identity.Identity
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.example.snapquest.viewModels.SignInViewModel
 import com.example.snapquest.viewModels.SignInViewModelFactory
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -73,6 +74,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private val context: Context by lazy {
+        this
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -162,7 +167,9 @@ class MainActivity : ComponentActivity() {
                                 factory = HomeViewModelFactory(userRepository)
                             )
                             val questViewModel = viewModel<QuestViewModel>(
-                                factory = QuestViewModelFactory(userRepository, questRepository, storageRepository)
+                                factory = QuestViewModelFactory(userRepository, questRepository, storageRepository,
+                                    NotificationService(context)
+                                )
                             )
                             val allPermissions = rememberMultiplePermissionsState(
                                 permissions = listOf(
@@ -190,7 +197,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screens.Quests.route) {
                             val questViewModel = viewModel<QuestViewModel>(
-                                factory = QuestViewModelFactory(userRepository, questRepository, storageRepository)
+                                factory = QuestViewModelFactory(userRepository, questRepository, storageRepository,
+                                    NotificationService(context)
+                                )
                             )
 
                             QuestsScreen(
@@ -203,7 +212,8 @@ class MainActivity : ComponentActivity() {
                                 factory = QuestViewModelFactory(
                                     (application as SnapQuestApp).userRepository,
                                     (application as SnapQuestApp).questRepository,
-                                    (application as SnapQuestApp).storageRepository
+                                    (application as SnapQuestApp).storageRepository,
+                                    NotificationService(context)
                                 )
                             )
                             CreateQuestScreen(
@@ -217,7 +227,8 @@ class MainActivity : ComponentActivity() {
                                 factory = QuestViewModelFactory(
                                     (application as SnapQuestApp).userRepository,
                                     (application as SnapQuestApp).questRepository,
-                                    (application as SnapQuestApp).storageRepository
+                                    (application as SnapQuestApp).storageRepository,
+                                    NotificationService(context)
                                 )
                             )
                             QuestDetailsScreen(
@@ -233,7 +244,8 @@ class MainActivity : ComponentActivity() {
                                 factory = QuestViewModelFactory(
                                     (application as SnapQuestApp).userRepository,
                                     (application as SnapQuestApp).questRepository,
-                                    (application as SnapQuestApp).storageRepository
+                                    (application as SnapQuestApp).storageRepository,
+                                    NotificationService(context)
                                 )
                             )
                             QuestParticipantsScreen(
@@ -250,7 +262,8 @@ class MainActivity : ComponentActivity() {
                                 factory = QuestViewModelFactory(
                                     (application as SnapQuestApp).userRepository,
                                     (application as SnapQuestApp).questRepository,
-                                    (application as SnapQuestApp).storageRepository
+                                    (application as SnapQuestApp).storageRepository,
+                                    NotificationService(context)
                                 )
                             )
                             ChallengeDetailsScreen(
@@ -260,16 +273,14 @@ class MainActivity : ComponentActivity() {
                                 viewModel = questViewModel
                             )
                         }
-                        composable(Screens.DailyQuest.route) {
-                            DailyQuestScreen(
-                                modifier = Modifier,
-                                navController = navController,
-                            )
-                        }
                         composable(Screens.Notifications.route) {
+                            val homeViewModel = viewModel<HomeViewModel>(
+                                factory = HomeViewModelFactory(userRepository)
+                            )
                             NotificationsScreen(
                                 modifier = Modifier,
                                 navController = navController,
+                                viewModel = homeViewModel
                             )
                         }
                         composable(Screens.Settings.route) {

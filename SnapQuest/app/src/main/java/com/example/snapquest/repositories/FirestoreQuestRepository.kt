@@ -84,7 +84,6 @@ class FirestoreQuestRepository {
             )
 
             questRef.set(updateData, SetOptions.merge()).await()
-
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("FirestoreQuestRepo", "Error joining quest", e)
