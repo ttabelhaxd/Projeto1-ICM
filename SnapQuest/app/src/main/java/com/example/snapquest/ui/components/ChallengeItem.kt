@@ -98,9 +98,9 @@ fun ChallengeItem(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (challenge.description.isNotBlank()) {
+                    if (challenge.hint.isNotBlank()) {
                         Text(
-                            text = challenge.description,
+                            text = challenge.hint,
                             style = MaterialTheme.typography.bodyMedium,
                             color = textColor.copy(alpha = 0.8f),
                             maxLines = 2,

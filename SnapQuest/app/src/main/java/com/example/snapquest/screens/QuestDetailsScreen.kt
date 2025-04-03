@@ -219,9 +219,14 @@ fun QuestDetailsScreen(
                 )
 
                 challenges.sortedBy { it.orderInQuest }.forEach { challenge ->
-                    val isUnlocked = remember(challenge.id, userQuest) {
-                        val challengeIndex = challenges.indexOf(challenge)
-                        challengeIndex == 0 || (userQuest?.completedChallenges?.contains(challenges[challengeIndex - 1].id) == true)
+                    val isUnlocked = remember(challenge.id, userQuest, challenges) {
+                        val challengeOrder = challenge.orderInQuest
+                        if (challengeOrder == 1) {
+                            true
+                        } else {
+                            val previousChallenge = challenges.find { it.orderInQuest == challengeOrder - 1 }
+                            previousChallenge?.let { userQuest?.completedChallenges?.contains(it.id) } ?: false
+                        }
                     }
 
                     ChallengeItem(
