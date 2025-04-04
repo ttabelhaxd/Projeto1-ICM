@@ -27,7 +27,7 @@ SnapQuest helps users discover more about a place by learning in a creative and 
     └── settings.gradle.kts
 ```
 The `SnapQuest` directory holds the **Android Project** itself.\
-The `SnapQuest.apk` is an apk ready to run.
+The `output.zip` is a zip with the apk ready to run.
 
 ## Architecture
 
