@@ -3,7 +3,9 @@
 <p align="center">
   <img src="./images-readme/SnapQuest_logo.png" width="200px" />
   <h1 align="center">SnapQuest Peddy-paper app - Android project for ICM classes</h1>
-  <img src="./images-readme/screens.png"  />
+  <img src="./images-readme/screens1.png"  />
+  <img src="./images-readme/screens2.png"  />
+  <img src="./images-readme/screens3.png"  />
 </p>
 <hr/>
 
